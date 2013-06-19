@@ -1,4 +1,3 @@
-pouchTools
+Collaborlist Server
 ==========
-
-Tools for pouchDB, a custom replicator, services, offline db handling
+[![Build Status](http://dev.datatransparency.com:8080/job/collaborlist/badge/icon)](http://dev.datatransparency.com:8080/job/collaborlist/)

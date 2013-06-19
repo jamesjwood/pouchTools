@@ -1,0 +1,24 @@
+{
+  "name": "pouchTools",
+  "version": "0.0.0",
+  "description": "tools for replicating and securing pouch/couch db",
+  "main": "index.js",
+  "scripts": {
+    "test": "grunt test"
+  },
+  "repository": "",
+  "author": "",
+  "license": "BSD",
+  "devDependencies": {
+    "sinon": "~1.7.2",
+    "grunt-simple-mocha": "~0.4.0",
+    "grunt": "~0.4.1",
+    "grunt-shell": "~0.2.2",
+    "grunt-contrib": "~0.7.0",
+    "mocha": "~1.10.0"
+  },
+  "dependencies": {
+    "pouchdb": "git://github.com/daleharvey/pouchdb.git",
+    "utils": "git://github.com/jamesjwood/utils.git"
+  }
+}

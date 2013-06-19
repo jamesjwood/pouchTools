@@ -12,3 +12,23 @@ logs
 results
 
 npm-debug.log
+
+
+.idea/
+
+coverage.html
+
+*.DS_Store
+
+*.dmg
+
+*.app
+
+npm-debug.log
+
+node_modules/
+
+stage/
+
+lib-cov/
+bin/
