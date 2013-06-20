@@ -19,7 +19,7 @@ module.exports = function(grunt) {
         browser: true,
         node: true
       },
-      all: ['src/crypto.js', 'test/crypto.js']
+      all: ['src/*.js', 'test/*.js']
     },
     simplemocha: {
       options: {
@@ -93,7 +93,7 @@ grunt.loadNpmTasks('grunt-contrib');
 grunt.loadNpmTasks('grunt-shell');
 grunt.loadNpmTasks('grunt-simple-mocha');
 
-grunt.registerTask('test', ['shell:makeStage', 'simplemocha']);
+grunt.registerTask('test', ['jshint', 'shell:makeStage', 'simplemocha']);
 grunt.registerTask('default', ['test']);
 
 };
