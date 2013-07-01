@@ -110,7 +110,7 @@ module.exports = function(id, pouch, checkpointPouch, onChange){
 						}
 					})();
 			}});	
-		};
+		}
 	}));
 
 	that.cancel = function(){
@@ -122,4 +122,4 @@ module.exports = function(id, pouch, checkpointPouch, onChange){
 		}
 	};
 	return that;
-}
+};
