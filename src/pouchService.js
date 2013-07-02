@@ -57,6 +57,7 @@ module.exports = function(id, pouch, checkpointPouch, onChange){
 		runLog.log('error getting initial checkpoint');
 		runLog.error(error);
 	};
+	var changes;
 
 	fetchCheckpoint(checkpointPouch, checkpointId, runLog.wrap('fetching initial checkpoint'), utils.safe(foundCheckpointError, function(error, target_seq){
 		if(error)
@@ -68,7 +69,7 @@ module.exports = function(id, pouch, checkpointPouch, onChange){
 		if(!that.cancelled)
 		{
 			var upTo = target_seq;
-			var changes = pouch.changes({
+			changes = pouch.changes({
 				continuous: true,
 				since: target_seq,
 				include_docs: true,
@@ -86,18 +87,20 @@ module.exports = function(id, pouch, checkpointPouch, onChange){
 						changeLog('ignoring checkpoint change');
 						return;
 					}
-					
-
+					changeLog('start');
+				
 					var eachChangeDone  = function(error){
 						if(error)
 						{
 							changeLog.error(error);
 							return;
 						}
+
 						writeCheckpoint(checkpointPouch, checkpointId, change.seq, changeLog.wrap('writing checkpoint'), utils.cb(function(err){
 							changeLog.error(err);
 							return;
 						},function(){
+							changeLog('end');
 							that.emit('changeProcessed', change);
 						}));
 					};
@@ -106,7 +109,8 @@ module.exports = function(id, pouch, checkpointPouch, onChange){
 					utils.cb(eachChangeDone, function(){
 						if(!that.cancelled)
 						{
-							onChange(change, eachChangeDone);
+							changeLog('calling service function');
+							onChange(change, changeLog.wrap('service function'), eachChangeDone);
 						}
 					})();
 			}});	

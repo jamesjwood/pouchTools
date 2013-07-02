@@ -23,7 +23,7 @@
 		};
 
 		pouch('stage/testService' + testNumber, utils.cb(onDone, function(db){
-			var myService = lib('stage_testService_' + testNumber, db, db, function(change, callback){
+			var myService = lib('stage_testService_' + testNumber, db, db, function(change, inLog, callback){
 				
 				callback();
 			});

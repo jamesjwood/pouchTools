@@ -42,6 +42,14 @@ module.exports = function(grunt) {
         stderr: true,
         failOnError: true
       }
+       ,
+      browserifyValidator:{
+        command: 'browserify  -o ./stage/validator.js -i domain -i -r ./src/validateDoc.js;',
+        stdout: true,
+        stderr: true,
+        failOnError: true
+      }
+
     }
   });
 
@@ -94,6 +102,7 @@ grunt.loadNpmTasks('grunt-shell');
 grunt.loadNpmTasks('grunt-simple-mocha');
 
 grunt.registerTask('test', ['jshint', 'shell:makeStage', 'simplemocha']);
+grunt.registerTask('install', 'shell:browserifyValidator')
 grunt.registerTask('default', ['test']);
 
 };
