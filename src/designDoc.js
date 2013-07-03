@@ -13,22 +13,23 @@ var browserify = require('browserify');
 var fs = require('fs');
 
 
-var validateDocBuff = fs.readFileSync('./stage/validator.js');
+var validateDocBuff = fs.readFileSync('./lib/validator.js');
 
-
-module.exports = function(typeSpecs){
+module.exports = function(typeSpecs, trustedCerts, customCheck){
 	assert.ok(typeSpecs);
-	var designDoc = {
-		_id: "_design/master",
-		validate_doc_update: createDesignDocString(typeSpecs)
-	};
-	return designDoc;
-};
+	assert.ok(trustedCerts);
 
-
-var createDesignDocString = function(typeSpecs){
-	var wrapper = "function(newDoc, oldDoc, userCtx){DOC_CODE var typeSpecs=TYPE_SPECS; var validator = require('/validateDoc.js'); return validator(newDoc, oldDoc, userCtx, typeSpecs);};";
+	var wrapper = "function(newDoc, oldDoc, userCtx){DOC_CODE var customCheck=CUSTOM_CHECK; var typeSpecs=TYPE_SPECS; var trustedCerts=TRUSTED_CERTS; var validator = require('/src/validateDoc.js'); return validator(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts, customCheck);};";
 	var validateDoc = wrapper.replace('DOC_CODE', validateDocBuff.toString('utf8'));
 	validateDoc = validateDoc.replace('TYPE_SPECS', JSON.stringify(typeSpecs));
-	return validateDoc
+	validateDoc = validateDoc.replace('TRUSTED_CERTS', JSON.stringify(trustedCerts));
+	validateDoc = validateDoc.replace('CUSTOM_CHECK', customCheck.toString());
+
+	console.log(validateDoc);
+	var designDoc = {
+		_id: "_design/master",
+		validate_doc_update: validateDoc
+	};
+
+	return designDoc;
 };

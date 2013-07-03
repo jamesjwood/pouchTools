@@ -36,6 +36,13 @@ module.exports = function(grunt) {
         failOnError: true
       }
       ,
+      makeLib: {
+        command: 'rm -rf lib; mkdir lib',
+        stdout: true,
+        stderr: true,
+        failOnError: true
+      }
+      ,
       browserify:{
         command: 'browserify  -o ./stage/crypto.js -i domain -i loggly -i ga -i pouchdb -e ./test/crypto.js;',
         stdout: true,
@@ -44,7 +51,7 @@ module.exports = function(grunt) {
       }
        ,
       browserifyValidator:{
-        command: 'browserify  -o ./stage/validator.js -i domain -i -r ./src/validateDoc.js;',
+        command: 'browserify  -o ./lib/validator.js -i domain -r ./src/validateDoc.js;',
         stdout: true,
         stderr: true,
         failOnError: true
@@ -101,8 +108,8 @@ grunt.loadNpmTasks('grunt-contrib');
 grunt.loadNpmTasks('grunt-shell');
 grunt.loadNpmTasks('grunt-simple-mocha');
 
-grunt.registerTask('test', ['jshint', 'shell:makeStage', 'simplemocha']);
-grunt.registerTask('install', 'shell:browserifyValidator')
+grunt.registerTask('test', ['jshint', 'shell:makeLib', 'shell:browserifyValidator', 'shell:makeStage', 'simplemocha']);
+grunt.registerTask('install', 'shell:makeLib', 'shell:browserifyValidator')
 grunt.registerTask('default', ['test']);
 
 };

@@ -1,17 +1,36 @@
-var utils = require('./simple.js');
+var jsonCrypto = require('jsonCrypto');
+var utils = require('utils');
 
-module.exports = function(newDoc, oldDoc, userCtx, typeSpecs){
-	
+module.exports = function(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts, customCheck){
+	var log = utils.log();
+	if(!typeSpecs)
+	{
+		throw({forbidden: 'no typeSpecs supplied'});
+	}
+	if(!trustedCerts)
+	{
+		throw({forbidden: 'no trustedCerts supplied'});
+	}
+	if(!customCheck)
+	{
+		throw({forbidden: 'no customCheck supplied'});
+	}
+
 	function requireOn(object, field, message) {
 		message = message || "Must have a " + field;
 		if (!object[field]) throw({forbidden : message});
-	};
+	}
 
-	var validateSignature = function(){
+	var validateSignature = function(doc){
 		requireOn(newDoc, 'signature');
+		if (!jsonCrypto.verifyObject(doc, trustedCerts, log))
+		{
+			throw ({forbidden: 'the signature is not valid'});
+		}
 	};
-	validateSignature();
+	validateSignature(newDoc);
 
+	var newSigner = jsonCrypto.getTrustedCert(newDoc.signature.signer,trustedCerts) || newDoc.signature.signer;
 
 	//check the type is allowed
 	requireOn(newDoc, 'type');
@@ -25,8 +44,9 @@ module.exports = function(newDoc, oldDoc, userCtx, typeSpecs){
 	});
 	if(specs.length === 0)
 	{
-		throw({forbidden: 'type not allowed'})
+		throw({forbidden: 'type not allowed'});
 	}
+
 	specs.map(function(spec){
 		requireOn(spec, 'editors');
 		requireOn(spec, 'contributors');
@@ -41,33 +61,53 @@ module.exports = function(newDoc, oldDoc, userCtx, typeSpecs){
 			});
 			return inRole;
 		};
-		var isEditor = checkRoles(newDoc.signature.id, spec.editors);
-		var isContributor = checkRoles(newDoc.signature.id, spec.contributors);
+		var isEditor = checkRoles(newSigner.name, spec.editors);
+		var isContributor = checkRoles(newSigner.name, spec.contributors);
 		if(!oldDoc)
 		{
 			//insert
+			requireOn(newDoc, 'creator');
+			if(newDoc.creator !== newSigner.name)
+			{
+				throw {forbidden: 'the creator must be equal to the certificate name'};
+			}
 			if(!isEditor && !isContributor)
 			{
-				throw {forbidden: 'you must be an editor or contributor to create new record'};
+				throw {forbidden: 'the user ' + newSigner.name + ' is not an editor or contributor'};
 			}
 		}
 		else
 		{
 			//update
+			requireOn(newDoc, 'editor');
+			if(newDoc.editor !== newSigner.name)
+			{
+				throw {forbidden: 'the editor must be equal to the certificate name'};
+			}
+
+			var oldSigner = jsonCrypto.getTrustedCert(oldDoc.signature.signer,trustedCerts) || oldDoc.signature.signer;
+
+			if(newDoc.creator !== oldDoc.creator)
+			{
+				throw {forbidden: 'you cannot change the creator'};
+			}
+
 			if(!isEditor)
 			{
 				if(isContributor)
 				{
-					if(newDoc.signature.id !== oldDoc.signature.id)
+					if(newDoc.editor !== oldDoc.creator)
 					{
-						throw {forbidden: 'contributors can only update their own records'};
+						throw {forbidden: 'the user ' + newSigner.name + ' can only update their own records'};
 					}
 				}
 				else
 				{
-					throw {forbidden: 'you must be an editor or contributor to update records'};
+					throw {forbidden: 'the user ' + newSigner.name + ' is not an editor or contributor'};
 				}
 			}
 		}
 	});
+
+	customCheck(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts);
 };
