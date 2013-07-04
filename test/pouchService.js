@@ -6,8 +6,17 @@
 
  var lib = require('./../src/pouchService.js');
 
+var jsonCrypto = require('jsonCrypto');
+
+
+var EXPONENT = 65537;
+var MODULUS = 512;
  var pouch = require('pouchdb');
  var async = require('async');
+
+
+var rootKeyBufferPair = jsonCrypto.generateKeyPEMBufferPair(MODULUS, EXPONENT);
+var rootCert = jsonCrypto.createCert('root', rootKeyBufferPair.publicPEM);
 
  describe('pouchService', function () {
 	it('1: should process changes', function (done) {
@@ -18,13 +27,12 @@
 			if(error)
 			{
 				log.error(error);
-			}			
+			}
 			done(error);
 		};
 
 		pouch('stage/testService' + testNumber, utils.cb(onDone, function(db){
-			var myService = lib('stage_testService_' + testNumber, db, db, function(change, inLog, callback){
-				
+			var myService = lib('stage_testService_' + testNumber, db, db, rootKeyBufferPair.privatePEM, rootCert, function(change, inLog, callback){
 				callback();
 			});
 
@@ -39,7 +47,6 @@
 						assert.equal(doc.last_seq, 1);
 						onDone();
 					}));
-					
 				}
 			});
 

@@ -1,7 +1,8 @@
 var events = require('events');
 var utils = require('utils');
+var jsonCrypto = require('jsonCrypto');
 
-module.exports = function(id, pouch, checkpointPouch, onChange){
+module.exports = function(id, pouch, checkpointPouch, privatePEMBuffer, certificate, onChange){
 
 	var that = new events.EventEmitter();
 	that.cancelled = false;
@@ -25,12 +26,14 @@ module.exports = function(id, pouch, checkpointPouch, onChange){
 	var writeCheckpoint = function(target, id, checkpoint, log, callback) {
 		var check = {
 			_id: id,
-			last_seq: checkpoint
+			last_seq: checkpoint,
+			type: 'checkpoint',
 		};
 		log('checking for existing checkpoint: ' + checkpoint);
 		target.get(check._id, function(err, doc) {
 			if (doc && doc._rev) {
 				check._rev = doc._rev;
+				check.creator = doc.creator;
 				log('existing checkpoint at : ' + doc.last_seq);
 				if(doc.last_seq === checkpoint)
 				{
@@ -41,8 +44,11 @@ module.exports = function(id, pouch, checkpointPouch, onChange){
 			else
 			{
 				log('no existing checkpoint');
+				check.creator = certificate.name;
 			}
-			target.put(check, function(err, doc) {
+			var signedCheck = jsonCrypto.signObject(check, privatePEMBuffer, certificate, false, log.wrap('signing checkpoint'));
+			log.dir(signedCheck);
+			target.put(signedCheck, function(err, doc) {
 				log('wrote checkpoint: ' + checkpoint);
 				callback();
 			});
@@ -88,7 +94,6 @@ module.exports = function(id, pouch, checkpointPouch, onChange){
 						return;
 					}
 					changeLog('start');
-				
 					var eachChangeDone  = function(error){
 						if(error)
 						{

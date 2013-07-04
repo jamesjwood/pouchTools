@@ -13,7 +13,8 @@ var browserify = require('browserify');
 var fs = require('fs');
 
 
-var validateDocBuff = fs.readFileSync('./lib/validator.js');
+var validateDocBuff = fs.readFileSync(__dirname + '/../lib/validator.js');
+assert.ok(validateDocBuff);
 
 module.exports = function(typeSpecs, trustedCerts, customCheck){
 	assert.ok(typeSpecs);
@@ -25,7 +26,6 @@ module.exports = function(typeSpecs, trustedCerts, customCheck){
 	validateDoc = validateDoc.replace('TRUSTED_CERTS', JSON.stringify(trustedCerts));
 	validateDoc = validateDoc.replace('CUSTOM_CHECK', customCheck.toString());
 
-	console.log(validateDoc);
 	var designDoc = {
 		_id: "_design/master",
 		validate_doc_update: validateDoc

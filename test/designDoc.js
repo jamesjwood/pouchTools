@@ -14,7 +14,7 @@ var pouch = require('pouchdb');
 
  var async = require('async');
 
-var masterLog = utils.log().wrap('pouchManager');
+var masterLog = utils.log().wrap('designDoc');
 
 var lib = require('../src/designDoc.js');
 
@@ -115,7 +115,7 @@ describe('designDoc', function () {
 			db.put(designDoc, utils.cb(onDone, function(){
 				db.put(testDoc, utils.safe(onDone, function(error){
 					assert.ok(error);
-					assert.equal('Must have a type', error.reason);
+					assert.equal(0, error.reason.indexOf('Must have a type'));
 					done();
 				}));
 			}));
@@ -153,7 +153,7 @@ describe('designDoc', function () {
 			db.put(designDoc, utils.cb(onDone, function(){
 				db.put(testDoc, utils.safe(onDone, function(error){
 					assert.ok(error);
-					assert.equal('Must have a signature', error.reason);
+					assert.equal(0, error.reason.indexOf('Must have a signature'));
 					done();
 				}));
 			}));
@@ -191,7 +191,7 @@ describe('designDoc', function () {
 			db.put(designDoc, utils.cb(onDone, function(){
 				db.put(testDoc, utils.safe(onDone, function(error){
 					assert.ok(error);
-					assert.equal('type not allowed', error.reason);
+					assert.equal(0, error.reason.indexOf('type not allowed'));
 					done();
 				}));
 			}));
@@ -472,7 +472,7 @@ describe('designDoc', function () {
 		{
 			type: 'user',
 			editors: ['user_1'],
-			contributors: []	
+			contributors: []
 		}
 		];
 
@@ -512,12 +512,12 @@ describe('designDoc', function () {
 		{
 			type: 'user',
 			editors: ['user_1'],
-			contributors: []	
+			contributors: []
 		}
 		];
 
 		var designDoc = lib(typeSpecs, [signedUserCert], function(){
-			throw {forbidden: 'test'};
+			throw({forbidden: 'test'});
 		});
 
 		var testDoc = {
@@ -526,7 +526,7 @@ describe('designDoc', function () {
 			creator: 'user_1'
 		};
 
-		testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert,  false, log);
+		testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert, false, log);
 
 		pouch(serverURL + 'test_designdoc_12', utils.cb(onDone, function(db){
 			db.put(designDoc, utils.cb(onDone, function(){
@@ -539,7 +539,4 @@ describe('designDoc', function () {
 			}));
 		}));
 	});
-
-
-
 });

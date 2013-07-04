@@ -17,7 +17,7 @@ module.exports = function(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts, cust
 	}
 
 	function requireOn(object, field, message) {
-		message = message || "Must have a " + field;
+		message = message || "Must have a " + field + ': ' + JSON.stringify(object);
 		if (!object[field]) throw({forbidden : message});
 	}
 
@@ -69,11 +69,11 @@ module.exports = function(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts, cust
 			requireOn(newDoc, 'creator');
 			if(newDoc.creator !== newSigner.name)
 			{
-				throw {forbidden: 'the creator must be equal to the certificate name'};
+				throw({forbidden: 'the creator must be equal to the certificate name'});
 			}
 			if(!isEditor && !isContributor)
 			{
-				throw {forbidden: 'the user ' + newSigner.name + ' is not an editor or contributor'};
+				throw({forbidden: 'the user ' + newSigner.name + ' is not an editor or contributor'});
 			}
 		}
 		else
@@ -82,14 +82,14 @@ module.exports = function(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts, cust
 			requireOn(newDoc, 'editor');
 			if(newDoc.editor !== newSigner.name)
 			{
-				throw {forbidden: 'the editor must be equal to the certificate name'};
+				throw({forbidden: 'the editor must be equal to the certificate name'});
 			}
 
 			var oldSigner = jsonCrypto.getTrustedCert(oldDoc.signature.signer,trustedCerts) || oldDoc.signature.signer;
 
 			if(newDoc.creator !== oldDoc.creator)
 			{
-				throw {forbidden: 'you cannot change the creator'};
+				throw({forbidden: 'you cannot change the creator'});
 			}
 
 			if(!isEditor)
@@ -98,12 +98,12 @@ module.exports = function(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts, cust
 				{
 					if(newDoc.editor !== oldDoc.creator)
 					{
-						throw {forbidden: 'the user ' + newSigner.name + ' can only update their own records'};
+						throw({forbidden: 'the user ' + newSigner.name + ' can only update their own records'});
 					}
 				}
 				else
 				{
-					throw {forbidden: 'the user ' + newSigner.name + ' is not an editor or contributor'};
+					throw({forbidden: 'the user ' + newSigner.name + ' is not an editor or contributor'});
 				}
 			}
 		}

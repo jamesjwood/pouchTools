@@ -11,16 +11,17 @@
   "author": "",
   "license": "BSD",
   "devDependencies": {
-    "sinon": "~1.7.2",
-    "grunt-simple-mocha": "~0.4.0",
-    "grunt": "~0.4.1",
-    "grunt-shell": "~0.2.2",
+    "sinon": "1.7.2",
+    "grunt-simple-mocha": "0.4.0",
+    "grunt": "0.4.1",
+    "grunt-shell": "0.2.2",
     "grunt-contrib": "0.7.0",
-    "nano": "~3.4.0"
+    "nano": "3.4.0"
   },
   "dependencies": {
     "pouchdb": "git://github.com/daleharvey/pouchdb.git",
     "utils": "git://github.com/jamesjwood/utils.git",
-    "browserify": "~2.22.0"
+    "jsonCrypto": "git://github.com/jamesjwood/jsonCrypto.git",
+    "browserify": "2.22.0"
   }
 }
