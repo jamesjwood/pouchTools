@@ -496,7 +496,6 @@ describe('designDoc', function () {
 			}));
 		}));
 	});
-
 	it('12: should run custom check', function (done) {
 		var log = masterLog.wrap('12');
 
@@ -526,7 +525,7 @@ describe('designDoc', function () {
 			creator: 'user_1'
 		};
 
-		testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert, false, log);
+		testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert, true, log);
 
 		pouch(serverURL + 'test_designdoc_12', utils.cb(onDone, function(db){
 			db.put(designDoc, utils.cb(onDone, function(){
