@@ -1,53 +1,34 @@
 var jsonCrypto = require('jsonCrypto');
 var utils = require('utils');
 
-module.exports = function(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts, customCheck){
-	try
+module.exports = function(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts){
+	var log = utils.log();
+	if(!typeSpecs)
 	{
-		var log = utils.log();
-		if(!typeSpecs)
+		throw({forbidden: 'no typeSpecs supplied'});
+	}
+	if(!trustedCerts)
+	{
+		throw({forbidden: 'no trustedCerts supplied'});
+	}
+
+
+
+
+
+	var validateSignature = function(doc){
+		module.exports.requireOn(newDoc, 'signature');
+		if (jsonCrypto.verifyObject(doc, trustedCerts, log) !== 1)
 		{
-			throw({forbidden: 'no typeSpecs supplied'});
+			throw ({forbidden: 'the signature is not valid'});
 		}
-		if(!trustedCerts)
-		{
-			throw({forbidden: 'no trustedCerts supplied'});
-		}
-		if(!customCheck)
-		{
-			throw({forbidden: 'no customCheck supplied'});
-		}
+	};
+	validateSignature(newDoc);
 
-		var requireOn = function (object, field, message) {
-			message = message || "Must have a " + field + ': ' + JSON.stringify(object);
-			if(typeof object[field] === 'undefined')
-			{
-				throw({forbidden : message});
-			}
-			else
-			{
-				if (!object[field]) throw({forbidden : message});
-			}
-		};
-
-		var unchanged = function (field) {
-			if (oldDoc && toJSON(oldDoc[field]) !== toJSON(newDoc[field]))
-				throw({forbidden : "Field can't be changed: " + field});
-		};
-
-		var validateSignature = function(doc){
-			requireOn(newDoc, 'signature');
-			if (!jsonCrypto.verifyObject(doc, trustedCerts, log))
-			{
-				throw ({forbidden: 'the signature is not valid'});
-			}
-		};
-		validateSignature(newDoc);
-
-		var newSigner = jsonCrypto.getTrustedCert(newDoc.signature.signer,trustedCerts) || newDoc.signature.signer;
+	var newSigner = jsonCrypto.getTrustedCert(newDoc.signature.signer,trustedCerts) || newDoc.signature.signer;
 
 		//check the type is allowed
-		requireOn(newDoc, 'type');
+		module.exports.requireOn(newDoc, 'type');
 		var specs = [];
 
 		typeSpecs.map(function(spec){
@@ -62,8 +43,8 @@ module.exports = function(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts, cust
 		}
 
 		specs.map(function(spec){
-			requireOn(spec, 'editors');
-			requireOn(spec, 'contributors');
+			module.exports.requireOn(spec, 'editors');
+			module.exports.requireOn(spec, 'contributors');
 
 			var checkRoles = function(name, list){
 				var inRole = false;
@@ -80,7 +61,7 @@ module.exports = function(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts, cust
 			if(!oldDoc)
 			{
 				//insert
-				requireOn(newDoc, 'creator');
+				module.exports.requireOn(newDoc, 'creator');
 				if(newDoc.creator !== newSigner.name)
 				{
 					throw({forbidden: 'the creator must be equal to the certificate name'});
@@ -93,7 +74,7 @@ module.exports = function(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts, cust
 			else
 			{
 				//update
-				requireOn(newDoc, 'editor');
+				module.exports.requireOn(newDoc, 'editor');
 				if(newDoc.editor !== newSigner.name)
 				{
 					throw({forbidden: 'the editor must be equal to the certificate name'});
@@ -101,7 +82,7 @@ module.exports = function(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts, cust
 
 				var oldSigner = jsonCrypto.getTrustedCert(oldDoc.signature.signer,trustedCerts) || oldDoc.signature.signer;
 
-				unchanged('creator');
+				module.exports.unchanged(newDoc, oldDoc, 'creator');
 
 				if(!isEditor)
 				{
@@ -119,19 +100,20 @@ module.exports = function(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts, cust
 				}
 			}
 		});
+};
 
-customCheck(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts);
-}
-catch(error)
-{
-	if(typeof error.forbidden === 'undefined' && typeof error.unauthorized === 'undefined')
+module.exports.requireOn = function (object, field, message) {
+	message = message || "Must have a " + field + ': ' + JSON.stringify(object);
+	if(typeof object[field] === 'undefined')
 	{
-		var e = {forbidden: 'Unhandled error: ' + JSON.stringify(error)};
-		throw e;
+		throw({forbidden : message});
 	}
-	else{
-		throw error;
+	else
+	{
+		if (!object[field]) throw({forbidden : message});
 	}
-}
-
+};
+module.exports.unchanged = function (newDoc, oldDox, field) {
+	if (oldDoc && toJSON(oldDoc[field]) !== toJSON(newDoc[field]))
+		throw({forbidden : "Field can't be changed: " + field});
 };

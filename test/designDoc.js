@@ -44,6 +44,9 @@ var user2Cert = jsonCrypto.createCert('user_2', user2KeyBufferPair.publicPEM);
 var signedUser2Cert = jsonCrypto.signObject(user2Cert, rootKeyBufferPair.privatePEM, rootCert,  true,masterLog);
 
 
+var VALIDATE_PATH = __dirname + '/../src/validateDoc.js';
+var RELATIVE_PATH = '/src/validateDoc.js';
+
 describe('designDoc', function () {
 	'use strict';
 
@@ -68,11 +71,17 @@ describe('designDoc', function () {
 		assert.ok(signedUserCert);
 	});
 
-	it('1: should return a doc', function () {
+	it('1: should return a doc', function (done) {
 		assert.ok(rootCert);
 		assert.ok(signedUserCert);
 		var log = masterLog.wrap('1');
-
+		var onDone = function(error){
+			if(error)
+			{
+				log.error(error);
+			}
+			done(error);
+		};
 		var typeSpecs = [
 		{
 			type: 'user',
@@ -80,8 +89,11 @@ describe('designDoc', function () {
 			contributors: []	
 		}
 		];
-		var designDoc = lib(typeSpecs, [rootCert], function(){});
-		assert.ok(designDoc);
+		lib(VALIDATE_PATH, RELATIVE_PATH, typeSpecs, [signedUserCert], log.wrap('genrating design doc'), utils.cb(onDone, function(designDoc){
+			assert.ok(designDoc);
+			onDone();
+		}));
+		
 
 	});
 
@@ -103,9 +115,8 @@ describe('designDoc', function () {
 			contributors: []	
 		}
 		];
-		var designDoc = lib(typeSpecs, [rootCert], function(){});
-
-		var testDoc = {
+		lib(VALIDATE_PATH, RELATIVE_PATH, typeSpecs, [signedUserCert], log.wrap('genrating design doc'), utils.cb(onDone, function(designDoc){
+			var testDoc = {
 			_id: 'testDoc_1',
 			creator: 'user_1'
 		};
@@ -120,6 +131,9 @@ describe('designDoc', function () {
 				}));
 			}));
 		}));
+		}));
+
+		
 	});
 
 
@@ -141,20 +155,20 @@ describe('designDoc', function () {
 			contributors: []	
 		}
 		];
-		var designDoc = lib(typeSpecs, [rootCert], function(){});
+		lib(VALIDATE_PATH, RELATIVE_PATH, typeSpecs, [signedUserCert], log.wrap('genrating design doc'), utils.cb(onDone, function(designDoc){
+			var testDoc = {
+				_id: 'user_3',
+				creator: 'user_1'
+			};
 
-		var testDoc = {
-			_id: 'user_3',
-			creator: 'user_1'
-		};
 
-
-		pouch(serverURL + 'test_designdoc_3', utils.cb(onDone, function(db){
-			db.put(designDoc, utils.cb(onDone, function(){
-				db.put(testDoc, utils.safe(onDone, function(error){
-					assert.ok(error);
-					assert.equal(0, error.reason.indexOf('Must have a signature'));
-					done();
+			pouch(serverURL + 'test_designdoc_3', utils.cb(onDone, function(db){
+				db.put(designDoc, utils.cb(onDone, function(){
+					db.put(testDoc, utils.safe(onDone, function(error){
+						assert.ok(error);
+						assert.equal(0, error.reason.indexOf('Must have a signature'));
+						done();
+					}));
 				}));
 			}));
 		}));
@@ -177,25 +191,27 @@ describe('designDoc', function () {
 			editors: ['*'],
 			contributors: []	
 		}];
-		var designDoc = lib(typeSpecs, [rootCert], function(){});
+		lib(VALIDATE_PATH, RELATIVE_PATH, typeSpecs, [signedUserCert], log.wrap('genrating design doc'), utils.cb(onDone, function(designDoc){
+			var testDoc = {
+				_id: 'user_4',
+				type: 'notuser',
+				creator: 'user_1'
+			};
+			testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert, true, log);
 
-		var testDoc = {
-			_id: 'user_4',
-			type: 'notuser',
-			creator: 'user_1'
-		};
-		testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert, true, log);
-
-		
-		pouch(serverURL + 'test_designdoc_4', utils.cb(onDone, function(db){
-			db.put(designDoc, utils.cb(onDone, function(){
-				db.put(testDoc, utils.safe(onDone, function(error){
-					assert.ok(error);
-					assert.equal(0, error.reason.indexOf('type not allowed'));
-					done();
+			
+			pouch(serverURL + 'test_designdoc_4', utils.cb(onDone, function(db){
+				db.put(designDoc, utils.cb(onDone, function(){
+					db.put(testDoc, utils.safe(onDone, function(error){
+						assert.ok(error);
+						assert.equal(0, error.reason.indexOf('type not allowed'));
+						done();
+					}));
 				}));
 			}));
 		}));
+
+	
 	});
 
 	it('5: should deny if user is not in contributors or editors', function (done) {
@@ -217,22 +233,22 @@ describe('designDoc', function () {
 		}
 		];
 
-		var designDoc = lib(typeSpecs, [rootCert], function(){});
+		lib(VALIDATE_PATH, RELATIVE_PATH, typeSpecs, [signedUserCert], log.wrap('genrating design doc'), utils.cb(onDone, function(designDoc){
+			var testDoc = {
+				_id: 'user_5',
+				type: 'user',
+				creator: 'user_1'
+			};
+			testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert,  true, log);
 
-		var testDoc = {
-			_id: 'user_5',
-			type: 'user',
-			creator: 'user_1'
-		};
-		testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert,  true, log);
 
-
-		pouch(serverURL + 'test_designdoc_5', utils.cb(onDone, function(db){
-			db.put(designDoc, utils.cb(onDone, function(){
-				db.put(testDoc, utils.safe(onDone, function(error){
-					assert.equal('the user user_1 is not an editor or contributor', error.reason);
-					assert.ok(error);
-					done();
+			pouch(serverURL + 'test_designdoc_5', utils.cb(onDone, function(db){
+				db.put(designDoc, utils.cb(onDone, function(){
+					db.put(testDoc, utils.safe(onDone, function(error){
+						assert.equal('the user user_1 is not an editor or contributor', error.reason);
+						assert.ok(error);
+						done();
+					}));
 				}));
 			}));
 		}));
@@ -256,21 +272,21 @@ describe('designDoc', function () {
 			contributors: ['user_1']	
 		}];
 		
-		var designDoc = lib(typeSpecs, [rootCert], function(){});
+		lib(VALIDATE_PATH, RELATIVE_PATH, typeSpecs, [signedUserCert], log.wrap('genrating design doc'), utils.cb(onDone, function(designDoc){
+			var testDoc = {
+				_id: 'user_6',
+				type: 'user',
+				creator: 'user_1'
+			};
+			testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert,  true, log);
 
-		var testDoc = {
-			_id: 'user_6',
-			type: 'user',
-			creator: 'user_1'
-		};
-		testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert,  true, log);
-
-		log(JSON.stringify(testDoc));
-		pouch(serverURL + 'test_designdoc_6', utils.cb(onDone, function(db){
-			db.put(designDoc, utils.cb(onDone, function(){
-				db.put(testDoc, utils.safe(onDone, function(error){
-					assert.ifError(error);
-					done();
+			log(JSON.stringify(testDoc));
+			pouch(serverURL + 'test_designdoc_6', utils.cb(onDone, function(db){
+				db.put(designDoc, utils.cb(onDone, function(){
+					db.put(testDoc, utils.safe(onDone, function(error){
+						assert.ifError(error);
+						done();
+					}));
 				}));
 			}));
 		}));
@@ -295,25 +311,27 @@ describe('designDoc', function () {
 		}
 		];
 
-		var designDoc = lib(typeSpecs, [rootCert], function(){});
-
-		var testDoc = {
-			_id: 'user_7',
-			type: 'user',
-			creator: 'user_1'
-		};
-		testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert, true, log);
-
+		lib(VALIDATE_PATH, RELATIVE_PATH, typeSpecs, [signedUserCert], log.wrap('genrating design doc'), utils.cb(onDone, function(designDoc){
+			var testDoc = {
+				_id: 'user_7',
+				type: 'user',
+				creator: 'user_1'
+			};
+			testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert, true, log);
 
 
-		pouch(serverURL + 'test_designdoc_7', utils.cb(onDone, function(db){
-			db.put(designDoc, utils.cb(onDone, function(){
-				db.put(testDoc, utils.safe(onDone, function(error){
-					assert.ifError(error);
-					done();
+
+			pouch(serverURL + 'test_designdoc_7', utils.cb(onDone, function(db){
+				db.put(designDoc, utils.cb(onDone, function(){
+					db.put(testDoc, utils.safe(onDone, function(error){
+						assert.ifError(error);
+						done();
+					}));
 				}));
 			}));
 		}));
+
+		
 	});
 
 	it('8: should only allow updates to the contributor', function (done) {
@@ -335,30 +353,30 @@ describe('designDoc', function () {
 		}
 		];
 
-		var designDoc = lib(typeSpecs, [rootCert], function(){});
+		lib(VALIDATE_PATH, RELATIVE_PATH, typeSpecs, [signedUserCert, signedUser2Cert], log.wrap('genrating design doc'), utils.cb(onDone, function(designDoc){
+			var testDoc = {
+				_id: 'user_8',
+				type: 'user',
+				creator: 'user_1'
+			};
+			var newDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert, true, log);
+			testDoc.updated = 'updated';
+			testDoc.editor = 'user_2';
+			var updatedDoc = jsonCrypto.signObject(testDoc, user2KeyBufferPair.privatePEM, signedUser2Cert, true, log);
 
-		var testDoc = {
-			_id: 'user_8',
-			type: 'user',
-			creator: 'user_1'
-		};
-		var newDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert, true, log);
-		testDoc.updated = 'updated';
-		testDoc.editor = 'user_2';
-		var updatedDoc = jsonCrypto.signObject(testDoc, user2KeyBufferPair.privatePEM, signedUser2Cert, true, log);
-
-		log.dir(updatedDoc);
-		pouch(serverURL + 'test_designdoc_8', utils.cb(onDone, function(db){
-			db.put(designDoc, utils.cb(onDone, function(){
-				log('saved design doc');
-				db.put(newDoc, utils.safe(onDone, function(error, response){
-					assert.ifError(error, 'error saving initial test doc');
-					log('saved initial test doc');
-					updatedDoc._rev = response.rev;
-					db.put(updatedDoc, utils.safe(onDone, function(error2){
-						assert.ok(error2, 'should have errored when updating doc');
-						assert.equal('the user user_2 can only update their own records', error2.reason);
-						done();
+			log.dir(updatedDoc);
+			pouch(serverURL + 'test_designdoc_8', utils.cb(onDone, function(db){
+				db.put(designDoc, utils.cb(onDone, function(){
+					log('saved design doc');
+					db.put(newDoc, utils.safe(onDone, function(error, response){
+						assert.ifError(error, 'error saving initial test doc');
+						log('saved initial test doc');
+						updatedDoc._rev = response.rev;
+						db.put(updatedDoc, utils.safe(onDone, function(error2){
+							assert.ok(error2, 'should have errored when updating doc');
+							assert.equal('the user user_2 can only update their own records', error2.reason);
+							done();
+						}));
 					}));
 				}));
 			}));
@@ -382,9 +400,8 @@ describe('designDoc', function () {
 			editors: [],
 			contributors: ['user_1']	
 		}];
-		var designDoc = lib(typeSpecs, [rootCert], function(){});
-
-		var testDoc = {
+		lib(VALIDATE_PATH, RELATIVE_PATH, typeSpecs, [signedUserCert], log.wrap('genrating design doc'), utils.cb(onDone, function(designDoc){
+			var testDoc = {
 			_id: 'user_9',
 			type: 'user',
 			creator: 'user_1'
@@ -408,7 +425,8 @@ describe('designDoc', function () {
 				}));
 			}));
 		}));
-	});
+	}));
+});
 
 	it('10: should allow updates to editors', function (done) {
 		var log = masterLog.wrap('10');
@@ -425,36 +443,34 @@ describe('designDoc', function () {
 		{
 			type: 'user',
 			editors: ['user_2'],
-			contributors: ['user_1']	
+			contributors: ['user_1']
 		}
 		];
-		var designDoc = lib(typeSpecs, [rootCert], function(){});
+		lib(VALIDATE_PATH, RELATIVE_PATH, typeSpecs, [signedUserCert,signedUser2Cert], log.wrap('genrating design doc'), utils.cb(onDone, function(designDoc){
+			var testDoc = {
+				_id: 'user_10',
+				type: 'user',
+				creator: 'user_1'
+			};
+			var newDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert, true, log);
+			testDoc.editor = 'user_2';
+			var updatedDoc = jsonCrypto.signObject(testDoc, user2KeyBufferPair.privatePEM, signedUser2Cert, true, log);
 
-		var testDoc = {
-			_id: 'user_10',
-			type: 'user',
-			creator: 'user_1'
-		};
-		var newDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert, true, log);
-		testDoc.editor = 'user_2';
-		var updatedDoc = jsonCrypto.signObject(testDoc, user2KeyBufferPair.privatePEM, signedUser2Cert, true, log);
-
-		
-
-
-
-		pouch(serverURL + 'test_designdoc_10', utils.cb(onDone, function(db){
-			db.put(designDoc, utils.cb(onDone, function(){
-				db.put(newDoc, utils.safe(onDone, function(error, response){
-					assert.ifError(error);
-					updatedDoc._rev = response.rev;
-					db.put(updatedDoc, utils.safe(onDone, function(error){
+			pouch(serverURL + 'test_designdoc_10', utils.cb(onDone, function(db){
+				db.put(designDoc, utils.cb(onDone, function(){
+					db.put(newDoc, utils.safe(onDone, function(error, response){
 						assert.ifError(error);
-						done();
+						updatedDoc._rev = response.rev;
+						db.put(updatedDoc, utils.safe(onDone, function(error){
+							assert.ifError(error);
+							done();
+						}));
 					}));
 				}));
 			}));
 		}));
+
+		
 	});
 
 	it('11: should allow user certificates', function (done) {
@@ -476,26 +492,27 @@ describe('designDoc', function () {
 		}
 		];
 
-		var designDoc = lib(typeSpecs, [signedUserCert], function(){});
+		lib(VALIDATE_PATH, RELATIVE_PATH, typeSpecs, [signedUserCert], log.wrap('genrating design doc'), utils.cb(onDone, function(designDoc){
+			var testDoc = {
+				_id: 'user_11',
+				type: 'user',
+				creator: 'user_1'
+			};
+			testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert,  false, log);
 
-		var testDoc = {
-			_id: 'user_11',
-			type: 'user',
-			creator: 'user_1'
-		};
-		testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert,  false, log);
 
-
-		log.dir(testDoc);
-		pouch(serverURL + 'test_designdoc_11', utils.cb(onDone, function(db){
-			db.put(designDoc, utils.cb(onDone, function(){
-				db.put(testDoc, utils.safe(onDone, function(error){
-					assert.ifError(error);
-					done();
+			log.dir(testDoc);
+			pouch(serverURL + 'test_designdoc_11', utils.cb(onDone, function(db){
+				db.put(designDoc, utils.cb(onDone, function(){
+					db.put(testDoc, utils.safe(onDone, function(error){
+						assert.ifError(error);
+						done();
+					}));
 				}));
 			}));
 		}));
 	});
+	/*
 	it('12: should run custom check', function (done) {
 		var log = masterLog.wrap('12');
 
@@ -538,4 +555,5 @@ describe('designDoc', function () {
 			}));
 		}));
 	});
+*/
 });
