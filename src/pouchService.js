@@ -2,7 +2,7 @@ var events = require('events');
 var utils = require('utils');
 var jsonCrypto = require('jsonCrypto');
 
-module.exports = function(id, pouch, checkpointPouch, privatePEMBuffer, certificate, onChange){
+module.exports = function(id, pouch, checkpointPouch, privatePEMBuffer, certificate, onChange, reset){
 
 	var that = new events.EventEmitter();
 	that.cancelled = false;
@@ -26,15 +26,14 @@ module.exports = function(id, pouch, checkpointPouch, privatePEMBuffer, certific
 	var writeCheckpoint = function(target, id, checkpoint, log, callback) {
 		var check = {
 			_id: id,
-			last_seq: checkpoint,
 			type: 'checkpoint',
 		};
 		log('checking for existing checkpoint: ' + checkpoint);
 		target.get(check._id, function(err, doc) {
 			if (doc && doc._rev) {
-				check._rev = doc._rev;
-				check.creator = doc.creator;
 				log('existing checkpoint at : ' + doc.last_seq);
+				check = doc;
+				check.editor = certificate.name;
 				if(doc.last_seq === checkpoint)
 				{
 					callback();
@@ -46,12 +45,13 @@ module.exports = function(id, pouch, checkpointPouch, privatePEMBuffer, certific
 				log('no existing checkpoint');
 				check.creator = certificate.name;
 			}
+			check.last_seq= checkpoint;
 			var signedCheck = jsonCrypto.signObject(check, privatePEMBuffer, certificate, false, log.wrap('signing checkpoint'));
 			log.dir(signedCheck);
-			target.put(signedCheck, function(err, doc) {
+			target.put(signedCheck, utils.cb(callback, function(doc) {
 				log('wrote checkpoint: ' + checkpoint);
 				callback();
-			});
+			}));
 		});
 	};
 
@@ -74,10 +74,18 @@ module.exports = function(id, pouch, checkpointPouch, privatePEMBuffer, certific
 		runLog('got initial checkpoint');
 		if(!that.cancelled)
 		{
-			var upTo = target_seq;
+			var upTo;
+			if(typeof reset === 'undefined' || reset === false)
+			{
+				upTo = target_seq;
+			}
+			else
+			{
+				upTo=0;
+			}
 			changes = pouch.changes({
 				continuous: true,
-				since: target_seq,
+				since: upTo,
 				include_docs: true,
 				onChange: function(change){
 					var changeLog = runLog.wrap('processing change ' + change.seq);

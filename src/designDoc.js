@@ -19,16 +19,13 @@ module.exports = function(fqPathToValidationModule, realtivePath, typeSpecs, tru
 	assert.ok(typeSpecs);
 	assert.ok(trustedCerts);
 
-	var REQUIRE_PATH = '4dR55C';
-
 	var b = browserify();
 	b.ignore('domain');
 	b.require(fqPathToValidationModule);
 
 	var validateDocBuff = b.bundle({});
+	assert.ok(validateDocBuff);
 
-		fs.writeFileSync(__dirname + '/../lib/validator2.js', validateDocBuff);
-		assert.ok(validateDocBuff);
 		var wrapperF = function(newDoc, oldDoc, userCtx){
 			try
 			{
@@ -52,13 +49,15 @@ module.exports = function(fqPathToValidationModule, realtivePath, typeSpecs, tru
 		};;
 		var wrapper = wrapperF.toString();
 		var validateDoc = wrapper.replace('DOC_CODE', validateDocBuff.toString('utf8'));
+		validateDoc = validateDoc.replace('REQUIRE_PATH', realtivePath);
 		validateDoc = validateDoc.replace('TYPE_SPECS', JSON.stringify(typeSpecs));
 		validateDoc = validateDoc.replace('TRUSTED_CERTS', JSON.stringify(trustedCerts));
-		validateDoc = validateDoc.replace('REQUIRE_PATH', realtivePath);
 
 		var designDoc = {
 			_id: "_design/master",
-			validate_doc_update: validateDoc
+			validate_doc_update: validateDoc,
+			trustedCerts:trustedCerts,
+			typeSpecs:typeSpecs
 		};
 
 		callback(null, designDoc);
