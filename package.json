@@ -23,5 +23,8 @@
     "utils": "git://github.com/jamesjwood/utils.git",
     "jsonCrypto": "git://github.com/jamesjwood/jsonCrypto.git",
     "browserify": "~1.17.3"
+  },
+  "browser": {
+    "REQUIRE_PATH": false
   }
 }
