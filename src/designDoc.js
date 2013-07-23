@@ -29,7 +29,7 @@ module.exports = function(fqPathToValidationModule, realtivePath, typeSpecs, tru
 		var wrapperF = function(newDoc, oldDoc, userCtx){
 			try
 			{
-				DOC_CODE
+				var DOC_CODE;
 				var typeSpecs=TYPE_SPECS;
 				var trustedCerts=TRUSTED_CERTS;
 				var validator = require('REQUIRE_PATH');
@@ -46,9 +46,9 @@ module.exports = function(fqPathToValidationModule, realtivePath, typeSpecs, tru
 					throw error;
 				}
 			}
-		};;
+		};
 		var wrapper = wrapperF.toString();
-		var validateDoc = wrapper.replace('DOC_CODE', validateDocBuff.toString('utf8'));
+		var validateDoc = wrapper.replace('var DOC_CODE;', validateDocBuff.toString('utf8'));
 		validateDoc = validateDoc.replace('REQUIRE_PATH', realtivePath);
 		validateDoc = validateDoc.replace('TYPE_SPECS', JSON.stringify(typeSpecs));
 		validateDoc = validateDoc.replace('TRUSTED_CERTS', JSON.stringify(trustedCerts));

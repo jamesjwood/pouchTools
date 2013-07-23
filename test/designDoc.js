@@ -12,7 +12,7 @@ var events = require('events');
 var sinon = require('sinon');
 var pouch = require('pouchdb');
 
- var async = require('async');
+var async = require('async');
 
 var masterLog = utils.log().wrap('designDoc');
 

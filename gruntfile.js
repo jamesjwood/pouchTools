@@ -108,7 +108,7 @@ grunt.loadNpmTasks('grunt-contrib');
 grunt.loadNpmTasks('grunt-shell');
 grunt.loadNpmTasks('grunt-simple-mocha');
 
-grunt.registerTask('test', ['jshint', 'shell:makeLib', 'shell:browserifyValidator', 'shell:makeStage', 'simplemocha']);
+grunt.registerTask('test', ['jshint', 'install', 'shell:makeStage', 'simplemocha']);
 grunt.registerTask('install', 'shell:makeLib', 'shell:browserifyValidator')
 grunt.registerTask('default', ['test']);
 
