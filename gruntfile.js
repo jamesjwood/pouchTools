@@ -44,14 +44,14 @@ module.exports = function(grunt) {
       }
       ,
       browserify:{
-        command: 'browserify  -o ./stage/crypto.js -i domain -i loggly -i ga -i pouchdb -e ./test/crypto.js;',
+        command: 'node ./node_modules/browserify/bin/cmd.js  -o ./stage/crypto.js -i domain -i loggly -i ga -i pouchdb -e ./test/crypto.js;',
         stdout: true,
         stderr: true,
         failOnError: true
       }
        ,
       browserifyValidator:{
-        command: 'browserify  -o ./lib/validator.js -i domain -r ./src/validateDoc.js;',
+        command: 'node ./node_modules/browserify/bin/cmd.js  -o ./lib/validator.js -i domain -r ./src/validateDoc.js;',
         stdout: true,
         stderr: true,
         failOnError: true

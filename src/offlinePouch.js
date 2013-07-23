@@ -6,7 +6,16 @@ var replicator = require('./replicator.js');
 
 var url = require('url');
 
-var pouch = require('pouchdb');
+var pouch;
+
+if(typeof window === 'undefined')
+{
+	pouch = require('pouchdb');
+} 
+else
+{
+	pouch = Pouch;
+}
 
 
 module.exports = function(url, opts, log, callback){

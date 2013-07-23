@@ -19,10 +19,10 @@
     "nano": "3.4.0"
   },
   "dependencies": {
-    "pouchdb": "git://github.com/daleharvey/pouchdb.git",
+    "pouchdb": "0.0.14",
     "utils": "git://github.com/jamesjwood/utils.git",
     "jsonCrypto": "git://github.com/jamesjwood/jsonCrypto.git",
-    "browserify": "~1.17.3"
+    "browserify": "1.17.3"
   },
   "browser": {
     "REQUIRE_PATH": false
