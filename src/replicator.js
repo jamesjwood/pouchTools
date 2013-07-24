@@ -9,6 +9,8 @@ var async = require('async');
 var events = require('events');
 var assert = require('assert');
 var utils = require('utils');
+var jsonCrypto = require('jsonCrypto');
+var Buff = require('buffer').Buffer;
 
 
 var genReplicationId = function(src, target, opts) {
@@ -18,7 +20,8 @@ var genReplicationId = function(src, target, opts) {
   {
     throw new Error('the source or target ids cannot be null');
   }
-  return '_local/' + Crypto.MD5(src.id() + target.id() + filterFun);
+  var hashBuff = jsonCrypto.hashBuffer(new Buff(src.id() + target.id() + filterFun, 'utf8'), 'md5');
+  return '_local/' + hashBuff.toString('hex');
 };
 
 var fetchCheckpoint = function(target, id, log, callback) {
