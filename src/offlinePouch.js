@@ -235,21 +235,7 @@ module.exports.offlineSupported = function(){
 };
 
 module.exports.setLocalDBCreated = function(url){
-	if(typeof window !== 'undefined')
-	{
-		core.createCookie(url, true);
-	}
 };
 module.exports.localDBAlreadyCreated = function(url){
-	var available;
-	if(typeof window !== 'undefined')
-	{
-		available = core.readCookie(url);
-	}
-	else
-	{
-		available = false;
-	}
-
-	return (available === true);
+	return false;
 };
