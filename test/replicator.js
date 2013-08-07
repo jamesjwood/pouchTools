@@ -22,7 +22,8 @@ var masterLog = utils.log().wrap('pouchManager.replicator');
 
 var lib = require('../src/replicator.js');
 
-
+var nano = require('nano');
+var async = require('async');
 
 var remoteDbUrl = 'http://admin:password@localhost:5984/';
 
@@ -44,6 +45,32 @@ describe('pouchManager.replicator', function () {
     masterLog('running on browser');
     pouch = Pouch;
   }
+
+var cleanDB = function(done){
+    var service = nano(remoteDbUrl);
+
+    async.forEachSeries(['4', '5', '6', '7'], function(name, cbk){
+      service.db.get('test_replicator_' + name, function(error, body){
+        if(!error)
+        {
+          service.db.destroy('test_replicator_' + name, cbk);
+        }
+        else
+        {
+          cbk();
+        }
+      });
+    }, function(error){
+      done(error);
+    });
+  };
+
+  before(function(done){
+    cleanDB(done);
+  });
+  after(function(done){
+    cleanDB(done);
+  });
 
 it('1: processor should call ', function (done) {
  var mylog = masterLog.wrap('1');
@@ -130,8 +157,8 @@ it('4: replicate, should fire initialReplicate', function (done) {
   done(error);
 };
 
-var dbName = localDbUrl + 'test-data-4';
-var remoteDbName = remoteDbUrl + 'test-data-4';
+var dbName = localDbUrl + 'test_replicator_4';
+var remoteDbName = remoteDbUrl + 'test_replicator_4';
 mylog('creating new database: ' + remoteDbName);
 pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
   pouch(remoteDbName, utils.cb(onDone, function (serverdb) {
@@ -163,8 +190,8 @@ it('5: replicate, should fire upToDate', function (done) {
   done(error);
 };
 
-var dbName = localDbUrl + 'test-data-5';
-var remoteDbName = remoteDbUrl + 'test-data-5';
+var dbName = localDbUrl + 'test_replicator_5';
+var remoteDbName = remoteDbUrl + 'test_replicator_5';
 mylog('creating new database: ' + remoteDbName);
 pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
   pouch(remoteDbName, utils.cb(onDone, function (serverdb) {
@@ -200,8 +227,8 @@ it('6: replicate, should replicate an item', function (done) {
   done(err);
 };
 
-var dbName = localDbUrl + 'test-data-6';
-var remoteDbName = remoteDbUrl + 'test-data-6';
+var dbName = localDbUrl + 'test_replicator_6';
+var remoteDbName = remoteDbUrl + 'test_replicator_6';
 mylog('creating new database: ' + remoteDbName);
 pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
   pouch(remoteDbName, utils.cb(onDone, function (serverdb) {
@@ -246,8 +273,8 @@ it('7: replicate, should be continuous', function (done) {
   done(err);
 };
 
-var dbName = localDbUrl + 'test-data-7';
-var remoteDbName = remoteDbUrl + 'test-data-7';
+var dbName = localDbUrl + 'test_replicator_7';
+var remoteDbName = remoteDbUrl + 'test_replicator_7';
 mylog('creating new database: ' + remoteDbName);
 pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
   pouch(remoteDbName, utils.cb(onDone, function (serverdb) {

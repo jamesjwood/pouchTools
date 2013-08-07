@@ -7,8 +7,11 @@
     "test": "grunt test",
     "install": "grunt install"
   },
-  "repository": "",
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jamesjwood/pouchTools.git"
+  },
+  "author": "James Wood <james.wood@datatransparency.com>",
   "license": "BSD",
   "devDependencies": {
     "sinon": "1.7.2",
@@ -22,7 +25,8 @@
     "pouchdb": "0.0.14",
     "utils": "git://github.com/jamesjwood/utils.git",
     "jsonCrypto": "git://github.com/jamesjwood/jsonCrypto.git",
-    "browserify": "1.17.3"
+    "browserify": "1.17.3",
+    "async": "~0.2.9"
   },
   "browser": {
     "REQUIRE_PATH": false

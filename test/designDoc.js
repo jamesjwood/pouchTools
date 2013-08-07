@@ -4,8 +4,6 @@
 /*global before */
 /*global after */
 
-
-
 var assert = require('assert');
 var utils = require('utils');
 var events = require('events');
@@ -13,17 +11,14 @@ var sinon = require('sinon');
 var pouch = require('pouchdb');
 
 var async = require('async');
-
-var masterLog = utils.log().wrap('designDoc');
-
 var lib = require('../src/designDoc.js');
-
 var pouch = require('pouchdb');
 var nano = require('nano');
+var jsonCrypto = require('jsonCrypto');
 
+var masterLog = utils.log().wrap('designDoc');
 var serverURL = 'http://admin:password@localhost:5984';
 
-var jsonCrypto = require('jsonCrypto');
 
 
 var EXPONENT = 65537;
@@ -31,6 +26,7 @@ var MODULUS = 512;
 
 var rootKeyBufferPair = jsonCrypto.generateKeyPEMBufferPair(MODULUS, EXPONENT);
 var rootCert = jsonCrypto.createCert('root', rootKeyBufferPair.publicPEM);
+assert.ok(rootCert, "rootCert not returned");
 
 var userKeyBufferPair = jsonCrypto.generateKeyPEMBufferPair(MODULUS, EXPONENT);
 var userCert = jsonCrypto.createCert('user_1', userKeyBufferPair.publicPEM);
@@ -50,7 +46,7 @@ var RELATIVE_PATH = '/src/validateDoc.js';
 describe('designDoc', function () {
 	'use strict';
 
-	before(function(done){
+	var cleanDB = function(done){
 		var service = nano(serverURL);
 
 		async.forEachSeries(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], function(name, cbk){
@@ -67,12 +63,21 @@ describe('designDoc', function () {
 		}, function(error){
 			done(error);
 		});
-		assert.ok(rootCert);
-		assert.ok(signedUserCert);
+	};
+
+	before(function(done){
+		cleanDB(function(){
+			assert.ok(rootCert,'rootCert not returned');
+			assert.ok(signedUserCert);
+			done();
+		});
+	});
+	after(function(done){
+		cleanDB(done);
 	});
 
 	it('1: should return a doc', function (done) {
-		assert.ok(rootCert);
+		assert.ok(rootCert, 'rootCert not returned');
 		assert.ok(signedUserCert);
 		var log = masterLog.wrap('1');
 		var onDone = function(error){
