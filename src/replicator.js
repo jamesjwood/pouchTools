@@ -156,108 +156,109 @@ module.exports  = function (src, target, opts)
     }
     log('getting sourceDB info');
     src.info(utils.cb(callback, function(info){
-    that.source_seq = info.update_seq;
-    log('sourceDB at ' + that.source_seq);
-    fetchCheckpoint(target, repId, log.wrap('getting checkpoint'), utils.cb(callback, function(checkpoint) {
-      if(that.cancelled)
-      {
-        return;
-      }
-      that.target_at_seq = checkpoint;
-      log('targetDB at ' + that.target_at_seq);
-      var incomingChange = function(change){
-        that.total_changes++;
-        that.outstanding_changes++; // = awaitingNotify.queued + awaitingSave.queued + awaitingGet.queued + awaitingDiff.queued;
-        awaitingDiff.enqueue(change.seq, change);
-        that.sEmit('changeQueued', change);
-      };
-
-      var changeReplicated = function(change){
-        if(changes.cancelled === true)
+      that.source_seq = info.update_seq;
+      log.dir(info);
+      log('sourceDB at ' + that.source_seq);
+      fetchCheckpoint(target, repId, log.wrap('getting checkpoint'), utils.cb(callback, function(checkpoint) {
+        if(that.cancelled)
         {
           return;
         }
-        that.outstanding_changes--; // = awaitingNotify.queued + awaitingSave.queued + awaitingGet.queued + awaitingDiff.queued;
-        if(change.seq >= that.source_seq)
-        {
-          that.source_seq = change.seq;
-        }
-        log('change ' + change.seq + ' replicated last is ' + that.source_seq);
-        that.sEmit('changeReplicated', change);
-
-        if(change.seq === info.update_seq)
-        {
-          initialReplicateComplete(change.seq);
-        }
-
-        if(change.seq === that.source_seq)
-        {
-          upToDate(change.seq);
-        }
-      };
-
-      var repOpts = {
-        continuous: opts.continuous,
-        since: that.target_at_seq,
-        style: 'all_docs',
-        onChange: incomingChange,
-        include_docs: true
-      };
-
-
-      if (opts.query_params) {
-        repOpts.query_params = opts.query_params;
-      }
-
-      var emitLog = function(name){
-        var loge = function(message){
-          log(name + ": " + message);
+        that.target_at_seq = checkpoint;
+        log('targetDB at ' + that.target_at_seq);
+        var incomingChange = function(change){
+          that.total_changes++;
+          that.outstanding_changes++; // = awaitingNotify.queued + awaitingSave.queued + awaitingGet.queued + awaitingDiff.queued;
+          awaitingDiff.enqueue(change.seq, change);
+          that.sEmit('changeQueued', change);
         };
-        return loge;
-      };
 
-      var awaitingNotify = changeQueue(getAwaitingNotifyProcessor(changeReplicated, target, repId, that.source_seq, log.wrap('notify queue')));
-      var awaitingSave = changeQueue(getAwaitingSaveProcessor(awaitingNotify, target, log.wrap('save queue')));
-      var awaitingGet = changeQueue(getAwaitingGetProcessor(awaitingSave, src, log.wrap('get queue')));
-      var awaitingDiff = changeQueue(getAwaitingDiffProcessor(awaitingGet, opts, target, log.wrap('diff queue')));
+        var changeReplicated = function(change){
+          if(that.cancelled === true)
+          {
+            return;
+          }
+          that.outstanding_changes--; // = awaitingNotify.queued + awaitingSave.queued + awaitingGet.queued + awaitingDiff.queued;
+          if(change.seq >= that.source_seq)
+          {
+            that.source_seq = change.seq;
+          }
+          log('change ' + change.seq + ' replicated last is ' + that.source_seq);
+          that.sEmit('changeReplicated', change);
+
+          if(change.seq === info.update_seq)
+          {
+            initialReplicateComplete(change.seq);
+          }
+
+          if(change.seq === that.source_seq)
+          {
+            upToDate(change.seq);
+          }
+        };
+
+        var repOpts = {
+          continuous: opts.continuous,
+          since: that.target_at_seq,
+          style: 'all_docs',
+          onChange: incomingChange,
+          include_docs: true
+        };
 
 
-      var updateOffline = function(){
-        var off = awaitingNotify.offline || awaitingSave.offline || awaitingGet.offline || awaitingDiff.offline;
-        if(that.offline !== off)
-        {
-          that.offline = off;
-          that.emit('offline', that.offline);
+        if (opts.query_params) {
+          repOpts.query_params = opts.query_params;
         }
-      };
 
-      awaitingNotify.addListener('offline', updateOffline);
-      awaitingSave.addListener('offline', updateOffline);
-      awaitingGet.addListener('offline', updateOffline);
-      awaitingDiff.addListener('offline', updateOffline);
+        var emitLog = function(name){
+          var loge = function(message){
+            log(name + ": " + message);
+          };
+          return loge;
+        };
 
-      awaitingNotify.addListener('error', criticalError);
-      awaitingSave.addListener('error', criticalError);
-      awaitingGet.addListener('error', criticalError);
-      awaitingDiff.addListener('error', criticalError);
-
-      //awaitingNotify.addListener('log', onProcessLog('awaitingNotify'));
-      //awaitingSave.addListener('log', onProcessLog('awaitingSave'));
-      //awaitingGet.addListener('log', onProcessLog('awaitingGet'));
-      awaitingDiff.addListener('log', log.wrap('diff processor'));
-
-      changes = src.changes(repOpts);
+        var awaitingNotify = changeQueue(getAwaitingNotifyProcessor(changeReplicated, target, repId, that.source_seq, log.wrap('notify queue')));
+        var awaitingSave = changeQueue(getAwaitingSaveProcessor(awaitingNotify, target, log.wrap('save queue')));
+        var awaitingGet = changeQueue(getAwaitingGetProcessor(awaitingSave, src, log.wrap('get queue')));
+        var awaitingDiff = changeQueue(getAwaitingDiffProcessor(awaitingGet, opts, target, log.wrap('diff queue')));
 
 
-      that.cancelProcessors = function(){
-        awaitingNotify.cancel();
-        awaitingSave.cancel();
-        awaitingGet.cancel();
-        awaitingDiff.cancel();
-      };
-      callback();
+        var updateOffline = function(){
+          var off = awaitingNotify.offline || awaitingSave.offline || awaitingGet.offline || awaitingDiff.offline;
+          if(that.offline !== off)
+          {
+            that.offline = off;
+            that.emit('offline', that.offline);
+          }
+        };
+
+        awaitingNotify.addListener('offline', updateOffline);
+        awaitingSave.addListener('offline', updateOffline);
+        awaitingGet.addListener('offline', updateOffline);
+        awaitingDiff.addListener('offline', updateOffline);
+
+        awaitingNotify.addListener('error', criticalError);
+        awaitingSave.addListener('error', criticalError);
+        awaitingGet.addListener('error', criticalError);
+        awaitingDiff.addListener('error', criticalError);
+
+        //awaitingNotify.addListener('log', onProcessLog('awaitingNotify'));
+        //awaitingSave.addListener('log', onProcessLog('awaitingSave'));
+        //awaitingGet.addListener('log', onProcessLog('awaitingGet'));
+        awaitingDiff.addListener('log', log.wrap('diff processor'));
+
+        changes = src.changes(repOpts);
+
+
+        that.cancelProcessors = function(){
+          awaitingNotify.cancel();
+          awaitingSave.cancel();
+          awaitingGet.cancel();
+          awaitingDiff.cancel();
+        };
+        callback();
+      }));
     }));
-  }));
   });
 
   var changes;
@@ -524,7 +525,7 @@ var getAwaitingNotifyProcessor = function(onChange, target, repId, source_seq, l
   var p = processor(function(seq, change, callback){
     if(source_seq <= seq)
     {
-      writeCheckpoint(target, repId, seq, log, utils.cb(callback, function(){
+      writeCheckpoint(target, repId, seq, log.wrap('writeCheckpoint'), utils.cb(callback, function(){
         onChange(change);
         callback();
       }));

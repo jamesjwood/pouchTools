@@ -110,16 +110,29 @@ module.exports = function(url, opts, log, callback){
 
 	var runLog = utils.log(that);
 
-	var setReplicator = function(replicatior){
-		that.replicator = replicatior;
+	var setUpReplicator = function(replicator){
+		that.replicator = replicator;
 		replicator.on('upToDate', function(a){
-			that.emit('upToDate', a);
+			that.emit('up:upToDate', a);
 		});
 		replicator.on('initialReplicateComplete', function(a){
-			that.emit('initialReplicateComplete', a);
+			that.emit('up:initialReplicateComplete', a);
 		});
 
-		var replicatorLog = runLog.wrap('replicator');
+		var replicatorLog = runLog.wrap('up:replicator');
+		utils.log.emitterToLog(replicator, replicatorLog);
+	};
+	var setDownReplicator = function(replicator){
+		var replicatorLog = runLog.wrap('down:replicator');
+
+		that.replicator = replicator;
+		replicator.on('upToDate', function(a){
+			that.emit('down:upToDate', a);
+		});
+		replicator.on('initialReplicateComplete', function(a){
+			that.emit('down:initialReplicateComplete', a);
+		});
+
 		utils.log.emitterToLog(replicator, replicatorLog);
 	};
 
@@ -138,7 +151,11 @@ module.exports = function(url, opts, log, callback){
 			retries = -1;
 			module.exports.getServerDb(pouch,url, retries, retryDelay,  log.wrap('getting serverdb'), utils.cb(replicationSetupError, function(sdb){
 				serverDB= sdb;
-				setReplicator(replicator(localDB, serverDB, {filter: filter}));
+				upReplicator = replicator(localDB, serverDB, {filter: filter});
+				setUpReplicator(upReplicator);
+
+				downReplicator = replicator(serverDB, localDB, {filter: filter});
+				setDownReplicator(downReplicator);
 			}));
 			callback(null, that);
 		}));
@@ -167,9 +184,13 @@ module.exports = function(url, opts, log, callback){
 					setActiveDB(serverDB, 'server');
 					callback(null, that);
 				}
-				replicator = replicator(localDB, serverDB, {filter: filter});
-				setReplicator(replicator);
-				replicator.on('initialReplicateComplete', utils.cb(replicationSetupError, function(){
+				upReplicator = replicator(localDB, serverDB, {filter: filter});
+				setUpReplicator(upReplicator);
+
+				downReplicator = replicator(serverDB, localDB, {filter: filter});
+				setDownReplicator(downReplicator);
+
+				downReplicator.on('initialReplicateComplete', utils.cb(replicationSetupError, function(){
 					setActiveDB(localDB, 'local');
 					setLocation('local');
 				}));

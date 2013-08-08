@@ -41,7 +41,7 @@ var noServerURL = 'http://noserver/nodb';
 
 
 
-describe('pouchManager', function () {
+describe('offlinePouch', function () {
   'use strict';
   var cleanDB = function(done){
 
@@ -182,7 +182,7 @@ describe('pouchManager', function () {
       serverDb.put({_id: 'testdoc'}, utils.cb(onDone, function(){
         serverDb.close();
         lib(serverURL + '/test_offlinepouch_5', {retryDelay: 2, waitForInitialReplicate: true}, log.wrap('creating offline pouch'),  utils.cb(onDone, function(offlinePouch){
-          offlinePouch.on('upToDate', function(){
+          offlinePouch.on('down:upToDate', function(){
             offlinePouch.get('testdoc', utils.cb(onDone, function(doc){
               assert.equal('testdoc', doc._id);
               offlinePouch.close();
