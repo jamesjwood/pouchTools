@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Mocha Tests</title>
+    <link rel="stylesheet" href="../lib/mocha.css" />
+</head>
+<body>
+<div id="mocha"></div>
+<script src="../lib/pouch.js" type="text/javascript"></script>
+<script src="../lib/mocha.js"></script>
+<script>
+    window.mocha.setup({
+   ui:'tdd', ignoreLeaks:true
+});
+</script>
+<script src="../stage/test.js" type="text/javascript"></script>
+<script>
+    mocha.run();
+</script>
+</body>
+</html>

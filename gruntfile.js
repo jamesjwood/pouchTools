@@ -26,7 +26,7 @@ module.exports = function(grunt) {
         ui: 'bdd',
         reporter: 'tap'
       },
-      all: { src: ['test.js'] }
+      all: { src: ['test/designDoc.js','test/offlinePouch.js','test/pouchService.js','test/replicator.js'] }
     },
     shell: {
       makeStage: {
@@ -44,7 +44,7 @@ module.exports = function(grunt) {
       }
       ,
       browserify:{
-        command: 'node ./node_modules/browserify/bin/cmd.js  -o ./stage/crypto.js -i domain -i loggly -i ga -i pouchdb -e ./test/crypto.js;',
+        command: 'node ./node_modules/browserify/bin/cmd.js  -o ./stage/test.js -i domain -i loggly -i ga -i pouchdb -e ./test.js;',
         stdout: true,
         stderr: true,
         failOnError: true
@@ -55,9 +55,40 @@ module.exports = function(grunt) {
         stdout: true,
         stderr: true,
         failOnError: true
+      },
+      buildPouchDBClient:{
+        command: 'cd node_modules/pouchdb; npm install; grunt;',
+        stdout: true,
+        stderr: true,
+        failOnError: true
+      },
+      copyPouch:{
+        command: 'cp -av node_modules/pouchdb/dist/pouchdb-nightly.min.js lib/pouch.min.js; cp -av node_modules/pouchdb/dist/pouchdb-nightly.js lib/pouch.js;',
+        stdout: true,
+        stderr: true,
+        failOnError: true
+      },
+      copyMocha:{
+        command: 'cp -av node_modules/grunt-simple-mocha/node_modules/mocha/mocha.js lib/mocha.js; cp -av node_modules/grunt-simple-mocha/node_modules/mocha/mocha.css lib/mocha.css',
+        stdout: true,
+        stderr: true,
+        failOnError: true
       }
 
-    }
+    },
+    karma: {
+      local: {
+        configFile: 'karma.conf.js',
+        singleRun: true,
+        browsers: ['Chrome'] //, 'Firefox', 'Safari', 'Opera'
+      },
+      jenkins:
+      {
+        configFile: 'karma.conf.js',
+        singleRun: true,
+        browsers: ['Firefox']
+      }
+    },
   });
 
 
@@ -107,9 +138,10 @@ grunt.registerTask('bundleForge', function(){
 grunt.loadNpmTasks('grunt-contrib');
 grunt.loadNpmTasks('grunt-shell');
 grunt.loadNpmTasks('grunt-simple-mocha');
+grunt.loadNpmTasks('grunt-karma');
 
-grunt.registerTask('test', ['jshint', 'install', 'shell:makeStage', 'simplemocha']);
-grunt.registerTask('install', 'shell:makeLib', 'shell:browserifyValidator')
-grunt.registerTask('default', ['test']);
+grunt.registerTask('test', ['jshint', 'shell:makeStage', 'simplemocha', 'shell:browserify', 'karma:local']);
+grunt.registerTask('install', ['shell:makeLib', 'shell:browserifyValidator', 'shell:buildPouchDBClient', 'shell:copyPouch']);
+grunt.registerTask('default', ['shell:makeStage', 'shell:browserify']);
 
 };

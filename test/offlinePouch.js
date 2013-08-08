@@ -13,41 +13,47 @@
 /*global after */
 
 
-
-var nano = require('nano');
 var assert = require('assert');
 var utils = require('utils');
 var events = require('events');
 var sinon = require('sinon');
-var pouch = require('pouchdb');
+var pouch;
+var rootDir;
+if(typeof window != 'undefined')
+{
+  pouch= Pouch;
+  rootDir = '';
+
+}
+else
+{
+  pouch = require('pouchdb');
+  rootDir = 'stage/';
+}
 var async = require('async');
 
-var masterLog = utils.log().wrap('pouchManager');
+var masterLog = utils.log().wrap('offlinePouch');
 
 var lib = require('../src/offlinePouch.js');
 
 var serverURL = 'http://admin:password@localhost:5984';
+var noServerURL = 'http://noserver/nodb';
 
 
 
 describe('pouchManager', function () {
   'use strict';
   var cleanDB = function(done){
-    var service = nano(serverURL);
 
     async.forEachSeries(['4', '5'], function(name, cbk){
-      service.db.get('test_designdoc_' + name, function(error, body){
-        if(!error)
-        {
-          service.db.destroy('test_offlinepouch_' + name, cbk);
-        }
-        else
-        {
-          cbk();
-        }
+      pouch.destroy('test_offlinepouch_' + name, function(error, body){
+       cbk();
       });
-    }, function(error){
-      done(error);
+    }, function(){
+      var name = lib.getLocalDBName(noServerURL);
+      pouch.destroy(name, function(error){
+        done();
+      });
     });
   };
 
@@ -128,7 +134,7 @@ describe('pouchManager', function () {
     };
 
      var fakePouch = function(url, cbk){
-      assert.equal('stage/localhost-5984-test_offlinepouch_3', url);
+      assert.equal(rootDir + 'localhost-5984-test_offlinepouch_3', url);
       cbk(null, {});
     };
 
@@ -202,7 +208,10 @@ describe('pouchManager', function () {
       {
         log.error(error);
       }
-      lib.offlineSupported.restore();
+      if(lib.offlineSupported.restore)
+      {
+        lib.offlineSupported.restore();
+      }
       done(error);
     };
 
@@ -210,7 +219,7 @@ describe('pouchManager', function () {
       return true;
     });
 
-    lib('http://noserver/nodb',{retries: -1, retryDelay: 200, waitForInitialReplicate: false}, log.wrap('creating offline pouch'),  utils.cb(onDone, function(offlinePouch){
+    lib(noServerURL,{retries: -1, retryDelay: 200, waitForInitialReplicate: false}, log.wrap('creating offline pouch'),  utils.cb(onDone, function(offlinePouch){
       offlinePouch.put({_id: 'testdoc2'}, utils.cb(onDone, function(){
         offlinePouch.close();
         onDone();

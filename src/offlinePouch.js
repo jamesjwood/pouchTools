@@ -50,6 +50,18 @@ module.exports = function(url, opts, log, callback){
 
 	var that = new events.EventEmitter();
 
+	var wrapActiveDBFunction = function(name){
+		that[name] = function(){
+			activeDB[name].apply(activeDB, arguments);
+		};
+	};
+	wrapActiveDBFunction('info');
+	wrapActiveDBFunction('put');
+	wrapActiveDBFunction('post');
+	wrapActiveDBFunction('get');
+	wrapActiveDBFunction('view');
+
+
 	var mapped = ['put', 'post', 'get', 'allDocs', 'changes', 'bulkDocs'];
 	mapped.map(function(name){
 		that[name] = function(){
@@ -86,6 +98,7 @@ module.exports = function(url, opts, log, callback){
 		retries = 0;
 		log('no browser support for local data, returning serverdb');
 		module.exports.getServerDb(pouch, url, retries, retryDelay, log.wrap('getting serverdb'),  utils.cb(callback, function(sdb){
+			log('got server db');
 			serverDB = sdb;
 			setActiveDB(serverDB, 'server');
 			callback(null, that);
@@ -173,10 +186,11 @@ module.exports.getServerDb = function(pouchdb, url, retries, retryDelay, log, ca
 		pouchdb(url, utils.safe(callback, function(error, db){
 			if(error)
 			{
+				log('error getting pouch');
+				log.error(error);
 				if(error.status === 400)
 				{
-					//timeout or not available
-					log.error(error);
+					//timeout or not availab
 					log('failed to get pouch');
 					if(retries ===0)
 					{
@@ -192,6 +206,7 @@ module.exports.getServerDb = function(pouchdb, url, retries, retryDelay, log, ca
 					return;
 				}
 				callback(error);
+				return;
 			}
 			log('pouch found');
 			callback(null, db);
@@ -201,20 +216,31 @@ module.exports.getServerDb = function(pouchdb, url, retries, retryDelay, log, ca
 
 
 module.exports.getLocalDb = function(pouchdb, serverUri, log, callback){
-
-	var serverURL = url.parse(serverUri);
-
-	utils.safe(callback, function(){
-		var localDBName = serverURL.hostname + "-" + serverURL.port + "-" + serverURL.pathname.replace('/', '');
-		if(typeof window === 'undefined')
-		{
-			localDBName = 'stage/' + localDBName;
-		}
+	
+		utils.safe(callback, function(){
+		
+		var localDBName = module.exports.getLocalDBName(serverUri);
 		log('getting local db: ' + localDBName);
 		pouchdb(localDBName, utils.cb(callback, function(db){
 			callback(null, db);
 		}));
 	})();
+};
+module.exports.getLocalDBName = function(serverUri){
+	var serverURL = url.parse(serverUri);
+	var localDBName = serverURL.hostname;
+		if(serverURL.port)
+		{
+			localDBName = localDBName + "-" + serverURL.port;
+		}  
+
+		localDBName = localDBName + serverURL.pathname.replace('/', '-');
+
+		if(typeof window === 'undefined')
+		{
+			localDBName = 'stage/' + localDBName;
+		}
+		return localDBName;
 };
 
 

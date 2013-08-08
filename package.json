@@ -15,18 +15,20 @@
   "license": "BSD",
   "devDependencies": {
     "sinon": "1.7.2",
-    "grunt-simple-mocha": "0.4.0",
-    "grunt": "0.4.1",
-    "grunt-shell": "0.2.2",
-    "grunt-contrib": "0.7.0",
+    "karma": "~0.8.5",
+    "grunt-karma": "~0.4.4",
     "nano": "3.4.0"
   },
   "dependencies": {
     "pouchdb": "0.0.14",
     "utils": "git://github.com/jamesjwood/utils.git",
     "jsonCrypto": "git://github.com/jamesjwood/jsonCrypto.git",
-    "browserify": "1.17.3",
-    "async": "~0.2.9"
+    "async": "~0.2.9",
+    "grunt-simple-mocha": "0.4.0",
+    "grunt": "0.4.1",
+    "grunt-shell": "0.2.2",
+    "grunt-contrib": "0.7.0",
+    "browserify": "~1.17.3"
   },
   "browser": {
     "REQUIRE_PATH": false

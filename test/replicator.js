@@ -18,7 +18,7 @@ var assert = require('assert');
 var utils = require('utils');
 var events = require('events');
 
-var masterLog = utils.log().wrap('pouchManager.replicator');
+var masterLog = utils.log().wrap('replicator');
 
 var lib = require('../src/replicator.js');
 
