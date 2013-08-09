@@ -19,6 +19,25 @@ var rootKeyBufferPair = jsonCrypto.generateKeyPEMBufferPair(MODULUS, EXPONENT);
 var rootCert = jsonCrypto.createCert('root', rootKeyBufferPair.publicPEM);
 
  describe('pouchService', function () {
+	var cleanDB = function(done){
+
+    async.forEachSeries(['1'], function(name, cbk){
+      pouch.destroy('stage/testService' + name, function(error, body){
+       cbk();
+      });
+    }, function(){
+		done();
+    });
+  };
+
+  before(function(done){
+    cleanDB(function(){
+      done();
+    });
+  });
+  after(function(done){
+    cleanDB(done);
+  });
 	it('1: should process changes', function (done) {
 		var testNumber = 1;
 		var log = masterLog.wrap(testNumber);

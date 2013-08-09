@@ -181,20 +181,19 @@ describe('offlinePouch', function () {
      pouch(serverURL + '/test_offlinepouch_5', utils.cb(onDone, function(serverDb){
       serverDb.put({_id: 'testdoc'}, utils.cb(onDone, function(){
         serverDb.close();
+
+
+        var offlinePouchLog = log.wrap('offlinePouch');
         lib(serverURL + '/test_offlinepouch_5', {retryDelay: 2, waitForInitialReplicate: true}, log.wrap('creating offline pouch'),  utils.cb(onDone, function(offlinePouch){
-          offlinePouch.on('down:upToDate', function(){
+          offlinePouch.on('downUpToDate', function(){
             offlinePouch.get('testdoc', utils.cb(onDone, function(doc){
               assert.equal('testdoc', doc._id);
               offlinePouch.close();
               onDone();
             }));
           });
-          offlinePouch.on('error', function(err){
-            log.error(err);
-          });
-          offlinePouch.on('log', function(message){
-            log(message);
-          });
+
+          utils.log.emitterToLog(offlinePouch, offlinePouchLog);
         }));
       }));
     })); 

@@ -110,35 +110,29 @@ module.exports = function(url, opts, log, callback){
 
 	var runLog = utils.log(that);
 
-	var setUpReplicator = function(replicator){
-		that.replicator = replicator;
-		replicator.on('upToDate', function(a){
-			that.emit('up:upToDate', a);
-		});
-		replicator.on('initialReplicateComplete', function(a){
-			that.emit('up:initialReplicateComplete', a);
-		});
-
-		var replicatorLog = runLog.wrap('up:replicator');
+	var setReplicator = function(opOrDown, replicator){		
+		var replicatorLog = runLog.wrap(opOrDown + 'Replicator');
+		if (that[opOrDown + 'Replicator'])
+		{
+			that[opOrDown + 'Replicator'].removeAllListeners();
+		}
+		that[opOrDown + 'Replicator'] = replicator;
 		utils.log.emitterToLog(replicator, replicatorLog);
-	};
-	var setDownReplicator = function(replicator){
-		var replicatorLog = runLog.wrap('down:replicator');
 
-		that.replicator = replicator;
-		replicator.on('upToDate', function(a){
-			that.emit('down:upToDate', a);
+		replicator.on('upToDate', function(){
+			that.emit(opOrDown + 'UpToDate');
 		});
-		replicator.on('initialReplicateComplete', function(a){
-			that.emit('down:initialReplicateComplete', a);
+		replicator.on('initialReplicateComplete', function(){
+			that.emit(opOrDown + 'InitialReplicateComplete');
 		});
-
-		utils.log.emitterToLog(replicator, replicatorLog);
 	};
 
-	var replicationSetupError = function(error){
-		that.emit('log', 'replication setup error');
-		that.emit('error', error);
+	var replicationSetup = function(error){
+		if(error)
+		{
+			runLog('replication setup error');
+			runLog.error(error);
+		}
 	};
 
 
@@ -149,13 +143,15 @@ module.exports = function(url, opts, log, callback){
 			localDB = ldb;
 			setActiveDB(localDB, 'local');
 			retries = -1;
-			module.exports.getServerDb(pouch,url, retries, retryDelay,  log.wrap('getting serverdb'), utils.cb(replicationSetupError, function(sdb){
+			log('getting serverdb');
+			module.exports.getServerDb(pouch,url, retries, retryDelay,  log.wrap('getting serverdb'), utils.cb(replicationSetup, function(sdb){
+				log('init replication');
 				serverDB= sdb;
-				upReplicator = replicator(localDB, serverDB, {filter: filter});
-				setUpReplicator(upReplicator);
-
-				downReplicator = replicator(serverDB, localDB, {filter: filter});
-				setDownReplicator(downReplicator);
+				upReplicator = replicator(localDB, serverDB, {filter: filter, continuous: true}, log.wrap('init up replicator'));
+				setReplicator('up', upReplicator);
+				downReplicator = replicator(serverDB, localDB, {filter: filter, continuous: true}, log.wrap('init down replicator'));
+				setReplicator('down', downReplicator);
+				log('init replication complete');
 			}));
 			callback(null, that);
 		}));
@@ -184,16 +180,17 @@ module.exports = function(url, opts, log, callback){
 					setActiveDB(serverDB, 'server');
 					callback(null, that);
 				}
-				upReplicator = replicator(localDB, serverDB, {filter: filter});
-				setUpReplicator(upReplicator);
+				log('init replication');
+				upReplicator = replicator(localDB, serverDB, {filter: filter, continuous: true}, log.wrap('init up replicator'));
+				setReplicator('up', upReplicator);
 
-				downReplicator = replicator(serverDB, localDB, {filter: filter});
-				setDownReplicator(downReplicator);
-
-				downReplicator.on('initialReplicateComplete', utils.cb(replicationSetupError, function(){
+				downReplicator = replicator(serverDB, localDB, {filter: filter, continuous: true}, log.wrap('init down replicator'));
+				setReplicator('down', downReplicator);
+				downReplicator.on('initialReplicateComplete',  function(){
 					setActiveDB(localDB, 'local');
-					setLocation('local');
-				}));
+				});
+
+				log('init replication complete');
 			}));
 		}));
 	}

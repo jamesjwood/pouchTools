@@ -167,7 +167,7 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
     pouch.destroy(dbName, utils.safe(onDone, function (error) {
       pouch(dbName, utils.cb(onDone, function (localdb) {
       mylog('initiating replication');
-        var replicator = lib(serverdb, localdb, {continuous: false});
+        var replicator = lib(serverdb, localdb, {continuous: false}, mylog.wrap('init replicator'));
         replicator.on('error', mylog.wrap('replicator').error);
         replicator.on('setupComplete', function(){
           replicator.on('initialReplicateComplete', function(change){
@@ -199,7 +199,7 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
     mylog('creating new database: ' + dbName);
     pouch.destroy(dbName, utils.safe(onDone, function (error) {
       pouch(dbName, utils.cb(onDone, function (localdb) {
-         var replicator = lib(serverdb, localdb, {continuous: false});
+         var replicator = lib(serverdb, localdb, {continuous: false}, mylog.wrap('init replicator'));
         replicator.on('error', function(error){
             mylog.error(error);
           });
@@ -238,7 +238,7 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
       pouch(dbName, utils.cb(onDone, function (localdb) {
         serverdb.put({_id: 'testitem'}, utils.cb(onDone, function(){
 
-          var replicator = lib(serverdb, localdb, {continuous: false});
+          var replicator = lib(serverdb, localdb, {continuous: false}, mylog.wrap('init replicator'));
           replicator.on('error', function(error){
             mylog.error(error);
             onDone(error);
@@ -284,7 +284,7 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
       pouch(dbName, utils.cb(onDone, function (localdb) {
           var count =0;
 
-          var replicator = lib(serverdb, localdb, {continuous: true});
+          var replicator = lib(serverdb, localdb, {continuous: true}, mylog.wrap('init replicator'));
           replicator.on('error', function(error){
             mylog.error(error);
             onDone(error);

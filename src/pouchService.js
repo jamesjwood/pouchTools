@@ -103,6 +103,10 @@ module.exports = function(id, pouch, checkpointPouch, privatePEMBuffer, certific
 					}
 					changeLog('start');
 					var eachChangeDone  = function(error){
+						if (that.cancelled)
+						{
+							return;
+						}
 						if(error)
 						{
 							changeLog.error(error);
@@ -132,11 +136,12 @@ module.exports = function(id, pouch, checkpointPouch, privatePEMBuffer, certific
 
 	that.cancel = function(){
 		that.cancelled = true;
-		that.removeAllListeners();
 		if(changes)
 		{
 			changes.cancel();
 		}
+
+		that.removeAllListeners();
 	};
 	return that;
 };

@@ -13,9 +13,9 @@ var jsonCrypto = require('jsonCrypto');
 var Buff = require('buffer').Buffer;
 
 
-var genReplicationId = function(src, target, opts) {
+var genReplicationId = function(src, target, opts, log) {
   var filterFun = opts.filter ? opts.filter.toString() : '';
-  console.log('generating repID from:' + src.id() + target.id() + filterFun);
+  log('generating repID from:' + src.id() + target.id() + filterFun);
   if(!src.id() || !target.id())
   {
     throw new Error('the source or target ids cannot be null');
@@ -65,7 +65,7 @@ var writeCheckpoint = function(target, id, checkpoint, log, callback) {
 };
 
 
-module.exports  = function (src, target, opts)
+module.exports  = function (src, target, opts, initLog)
 {
   var that = new events.EventEmitter();
   that.cancelled = false;
@@ -85,7 +85,7 @@ module.exports  = function (src, target, opts)
     }
   };
 
-  var repId = genReplicationId(src, target, opts);
+  var repId = genReplicationId(src, target, opts, initLog.wrap('genReplicationId'));
   var changeCallback = opts.onChange;
   var onInitialComplete = opts.onInitialComplete;
   var onUpToDate = opts.onUpToDate;
@@ -157,7 +157,6 @@ module.exports  = function (src, target, opts)
     log('getting sourceDB info');
     src.info(utils.cb(callback, function(info){
       that.source_seq = info.update_seq;
-      log.dir(info);
       log('sourceDB at ' + that.source_seq);
       fetchCheckpoint(target, repId, log.wrap('getting checkpoint'), utils.cb(callback, function(checkpoint) {
         if(that.cancelled)
@@ -167,6 +166,7 @@ module.exports  = function (src, target, opts)
         that.target_at_seq = checkpoint;
         log('targetDB at ' + that.target_at_seq);
         var incomingChange = function(change){
+          log('incoming change: ' + change.seq);
           that.total_changes++;
           that.outstanding_changes++; // = awaitingNotify.queued + awaitingSave.queued + awaitingGet.queued + awaitingDiff.queued;
           awaitingDiff.enqueue(change.seq, change);
@@ -183,18 +183,30 @@ module.exports  = function (src, target, opts)
           {
             that.source_seq = change.seq;
           }
-          log('change ' + change.seq + ' replicated last is ' + that.source_seq);
           that.sEmit('changeReplicated', change);
+
+
+
+
 
           if(change.seq === info.update_seq)
           {
             initialReplicateComplete(change.seq);
+          }
+          else
+          {
+            log('not initial complete, at '  + change.seq + ' initial seq is ' + info.update_seq);
           }
 
           if(change.seq === that.source_seq)
           {
             upToDate(change.seq);
           }
+          else
+          {
+            log('not up to date, at ' + change.seq + ' sourcs is at ' + that.source_seq);
+          }
+          
         };
 
         var repOpts = {
@@ -263,6 +275,7 @@ module.exports  = function (src, target, opts)
 
   var changes;
   that.cancel = function(){
+    log('cancelling');
     that.cancelled = true;
     that.sEmit('cancelled');
     that.removeAllListeners();
@@ -503,9 +516,14 @@ var getAwaitingSaveProcessor = function(awaitingNotify, target, logs){
             return;
             //there is a duplicate record already, that is ok
           }
-          console.log(error);
+          logs.error(error, 'saving record');
           alert('bulk write error');
         }
+        else
+        {
+          logs('successfully saved: ' + rev._id);
+        }
+        logs.dir(arguments);
         cbk(error);
       }));
     }, function(error){
