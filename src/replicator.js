@@ -92,10 +92,7 @@ module.exports  = function (src, target, opts, initLog)
   var retries = opts.retries || -1;
   var log = utils.log(that);
 
-  var criticalError = function(error){
-    that.sEmit('error', error);
-    that.cancel();
-  };
+  
 
   var initialReplicateComplete = function(seq){
     log('initialReplicateComplete');
@@ -249,18 +246,12 @@ module.exports  = function (src, target, opts, initLog)
         awaitingGet.addListener('offline', updateOffline);
         awaitingDiff.addListener('offline', updateOffline);
 
-        awaitingNotify.addListener('error', criticalError);
-        awaitingSave.addListener('error', criticalError);
-        awaitingGet.addListener('error', criticalError);
-        awaitingDiff.addListener('error', criticalError);
-
-        //awaitingNotify.addListener('log', onProcessLog('awaitingNotify'));
-        //awaitingSave.addListener('log', onProcessLog('awaitingSave'));
-        //awaitingGet.addListener('log', onProcessLog('awaitingGet'));
-        awaitingDiff.addListener('log', log.wrap('diff processor'));
+        utils.log.emitterToLog(awaitingNotify, log.wrap('notifyProcessor'));
+        utils.log.emitterToLog(awaitingSave, log.wrap('saveProcessor'));
+        utils.log.emitterToLog(awaitingGet, log.wrap('getProcessor'));
+        utils.log.emitterToLog(awaitingDiff, log.wrap('diffProcessor'));
 
         changes = src.changes(repOpts);
-
 
         that.cancelProcessors = function(){
           awaitingNotify.cancel();
@@ -288,6 +279,11 @@ module.exports  = function (src, target, opts, initLog)
        that.cancelProcessors();
     }
   };
+
+  that.on('error', function(){
+    that.cancel();
+  });
+
   setup(setupComplete);
 
   return that;
@@ -507,24 +503,37 @@ var getAwaitingSaveProcessor = function(awaitingNotify, target, logs){
     var change = payload.change;
     var revs = payload.revs;
     async.forEachSeries(revs, function(rev, cbk){
-      target.bulkDocs({docs: [rev]}, {new_edits: false}, utils.safe.catchSyncronousErrors(cbk, function(error){
+      logs('saving rev');
+      logs(JSON.stringify(rev));
+      target.bulkDocs({docs: [rev]}, {new_edits: false}, utils.safe.catchSyncronousErrors(cbk, function(error, response){
         if(error)
         {
-          if(error.status ===500)
+          logs('Possible problem saving diff: ' + rev._dif);
+          if(error.status !==500)
           {
-            cbk();
+            logs.error(error, 'saving record');
+            cbk(error);
             return;
+          }
+          else
+          {
             //there is a duplicate record already, that is ok
           }
-          logs.error(error, 'saving record');
-          alert('bulk write error');
         }
         else
         {
-          logs('successfully saved: ' + rev._id);
+          assert.equal(response.length, 1);
+          var revResponse = response[0];
+          if(revResponse.error)
+          {
+            var e = new Error('bulkDocs error: ' + revResponse.error + ', ' + revResponse.reason + ' for rev: ' + revResponse.rev + ' id: ' + revResponse.id);
+            logs.error(e, 'bulkDocs error');
+            cbk(e);
+            return;
+          }
         }
-        logs.dir(arguments);
-        cbk(error);
+        logs('successfully saved: ' + rev._id);
+        cbk();
       }));
     }, function(error){
       if(error)
