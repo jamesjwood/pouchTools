@@ -30,6 +30,15 @@ module.exports = function(id, pouch, checkpointPouch, privatePEMBuffer, certific
 		};
 		log('checking for existing checkpoint: ' + checkpoint);
 		target.get(check._id, function(err, doc) {
+			if(err)
+			{
+				if(err.status !== 404)
+				{
+					log.error(err);
+					callback(err);
+					return;
+				}
+			}
 			if (doc && doc._rev) {
 				log('existing checkpoint at : ' + doc.last_seq);
 				check = doc;
