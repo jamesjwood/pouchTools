@@ -13,7 +13,7 @@ module.exports = function(queues){
 	var getQueF = function(i){
 		var f = function(seq, payload){
 			queues[i +1].enqueue(seq, payload);
-		}
+		};
 		return f;
 	};
 
@@ -59,7 +59,7 @@ module.exports = function(queues){
 
 	that.enqueue = function(){
 		queues[0].enqueue.apply(null, arguments);
-	}
+	};
 	return that;
 };
 

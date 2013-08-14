@@ -10,8 +10,8 @@ module.exports = function(processItem){
       var onDone = function(error){
         if(error)
         {
-          log('error processing item: ' + seq + " message was " + error.message);
-          cbk();
+          log('error processing seq: ' + seq);
+          cbk(error);
           return;
         }
         log('done ' + seq);

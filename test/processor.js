@@ -20,7 +20,6 @@
 
  var masterLog = utils.log().wrap('processor');
  var lib = require('../src/processor.js');
- var nano = require('nano');
  var async = require('async');
 
 

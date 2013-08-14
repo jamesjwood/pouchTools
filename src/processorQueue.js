@@ -3,8 +3,9 @@ var utils = require('utils');
 var jsonCrypto = require('jsonCrypto');
 var async = require('async');
 
-module.exports =function(processor){
+module.exports =function(processor, retryInterval){
   var queue = {};
+  retryInterval = retryInterval || 500;
 
   var that = new events.EventEmitter();
   var log = utils.log(that);
@@ -77,9 +78,9 @@ module.exports =function(processor){
       }
       else
       {
-        log('some items failed to process, scheduling a retry in 5 seconds');
+        log('some items failed to process, scheduling a retry in ' + retryInterval/100 + ' seconds');
         setOffline(true);
-        setTimeout(that.process, 5000);
+        setTimeout(that.process, retryInterval);
         that.emit('state', 'idle');
       }
     }

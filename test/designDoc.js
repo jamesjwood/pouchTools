@@ -8,12 +8,14 @@ var assert = require('assert');
 var utils = require('utils');
 var events = require('events');
 var sinon = require('sinon');
+
 var pouch = require('pouchdb');
+
+
 
 var async = require('async');
 var lib = require('../src/designDoc.js');
 var pouch = require('pouchdb');
-var nano = require('nano');
 var jsonCrypto = require('jsonCrypto');
 
 var masterLog = utils.log().wrap('designDoc');
@@ -47,23 +49,17 @@ describe('designDoc', function () {
 	'use strict';
 
 	var cleanDB = function(done){
-		var service = nano(serverURL);
 
 		async.forEachSeries(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], function(name, cbk){
-			service.db.get('test_designdoc_' + name, function(error, body){
-				if(!error)
-				{
-					service.db.destroy('test_designdoc_' + name, cbk);
-				}
-				else
-				{
-					cbk();
-				}
+
+			pouch.destroy(serverURL + '/test_designdoc_' + name, function(error, body){
+				cbk();
 			});
 		}, function(error){
 			done(error);
 		});
 	};
+
 
 	before(function(done){
 		cleanDB(function(){

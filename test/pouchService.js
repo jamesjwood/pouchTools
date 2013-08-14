@@ -4,6 +4,9 @@
 
  var masterLog = utils.log().wrap('pouchService');
 
+ var processor = require('./../src/processor.js');
+ var processorQueue = require('./../src/processorQueue.js');
+
  var lib = require('./../src/pouchService.js');
 
 var jsonCrypto = require('jsonCrypto');
@@ -11,7 +14,17 @@ var jsonCrypto = require('jsonCrypto');
 
 var EXPONENT = 65537;
 var MODULUS = 512;
- var pouch = require('pouchdb');
+var pouch;
+if(typeof window != 'undefined')
+{
+  pouch= Pouch;
+
+}
+else
+{
+  pouch = require('pouchdb');
+}
+
  var async = require('async');
 
 
@@ -50,31 +63,38 @@ var rootCert = jsonCrypto.createCert('root', rootKeyBufferPair.publicPEM);
 			done(error);
 		};
 
+		var checkpoint = 0;
+
+
+		var queue = processorQueue(processor(function(seq, payload, mlog, callback){
+			mlog('processor called');
+			callback(null, payload);
+		}));
+
 		pouch('stage/testService' + testNumber, utils.cb(onDone, function(db){
-			var myService = lib('stage_testService_' + testNumber, db, db, rootKeyBufferPair.privatePEM, rootCert, function(change, inLog, callback){
-				callback();
-			});
+			var myService = lib('myservice', db, db, [queue], {continuous: true},  log.wrap('changeServiceInit'));
+			utils.log.emitterToLog(myService, log.wrap('service'));
 
-			myService.on('error', function(error){
-				onDone(error);
-			});
-
-			myService.on('changeProcessed', function(change){
-				if(change.id === 'mychange')
-				{
-					db.get('serviceCheckpoint_stage_testService_1', utils.cb(onDone, function(doc){
-						assert.equal(doc.last_seq, 1);
-						onDone();
-					}));
-				}
-			});
-
-			utils.log.emitterToLog(myService, log.wrap('the service'));
-			db.put({_id: 'mychange'}, function(error){
-				if(error)
-				{
+			myService.on('setupComplete', utils.cb(onDone, function(){
+				log('setup complete');
+				myService.on('error', function(error){
 					onDone(error);
-				}
+				});
+
+				log('submitting a new change');
+
+				db.put({_id: 'mychange'}, function(error){
+					if(error)
+					{
+						onDone(error);
+						return;
+					}
+					log('submitted change');
+				});
+			}));
+
+			myService.on('changeDone', function(){
+				onDone();
 			});
 		}));
 	});

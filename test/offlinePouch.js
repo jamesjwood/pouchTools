@@ -30,6 +30,7 @@ else
   pouch = require('pouchdb');
   rootDir = 'stage/';
 }
+
 var async = require('async');
 
 var masterLog = utils.log().wrap('offlinePouch');
@@ -45,17 +46,18 @@ describe('offlinePouch', function () {
   'use strict';
   var cleanDB = function(done){
 
-    async.forEachSeries(['4', '5'], function(name, cbk){
-      pouch.destroy('test_offlinepouch_' + name, function(error, body){
-       cbk();
+    async.forEachSeries(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], function(name, cbk){
+
+      pouch.destroy(serverURL + '/test_offlinepouch_' + name, function(error, body){
+        cbk();
       });
-    }, function(){
-      var name = lib.getLocalDBName(noServerURL);
-      pouch.destroy(name, function(error){
-        done();
-      });
+    }, function(error){
+      done(error);
     });
   };
+
+
+  
 
   before(function(done){
     cleanDB(function(){

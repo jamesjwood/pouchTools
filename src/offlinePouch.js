@@ -7,14 +7,14 @@ var replicator = require('./replicator.js');
 var url = require('url');
 
 var pouch;
-
-if(typeof window === 'undefined')
+if(typeof window != 'undefined')
 {
-	pouch = require('pouchdb');
-} 
+  pouch= Pouch;
+
+}
 else
 {
-	pouch = Pouch;
+  pouch = require('pouchdb');
 }
 
 
@@ -205,13 +205,13 @@ module.exports.getServerDb = function(pouchdb, url, retries, retryDelay, log, ca
 			if(error)
 			{
 				log('error getting pouch');
-				log.error(error);
-				if(error.status === 400)
+				if(error.status === 400 || error.status === 0)
 				{
 					//timeout or not availab
 					log('failed to get pouch');
 					if(retries ===0)
 					{
+						log.error(error);
 						callback(error);
 					}
 					else

@@ -100,9 +100,12 @@ var writeCheckpoint = function(checkpointDB, id, seq, log, callback) {
     });
 };
 
-
-module.exports  = function (id, srcDB, checkpointDB, queues, retries, retryInterval, continuous, initLog)
+module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
 {
+  opts.retries = opts.retries || 0;
+  opts.filter = opts.filter || null;
+  opts.reset = opts.reset || false;
+  opts.continuous = opts.continuous || false;
 
   var that = new events.EventEmitter();
 
@@ -146,7 +149,7 @@ module.exports  = function (id, srcDB, checkpointDB, queues, retries, retryInter
           {
             setup(setupComplete);
           }
-        }, retryInterval);
+        }, opts.retryInterval);
       }
       else
       {
@@ -186,6 +189,10 @@ module.exports  = function (id, srcDB, checkpointDB, queues, retries, retryInter
         if(that.cancelled)
         {
           return;
+        }
+        if(opts.reset)
+        {
+          checkpoint = 0;
         }
         that.target_at_seq = checkpoint;
         log('targetDB at ' + that.target_at_seq);
@@ -235,7 +242,7 @@ module.exports  = function (id, srcDB, checkpointDB, queues, retries, retryInter
         };
 
         var repOpts = {
-          continuous: continuous,
+          continuous: opts.continuous,
           since: that.target_at_seq,
           style: 'all_docs',
           onChange: incomingChange,
@@ -266,7 +273,7 @@ module.exports  = function (id, srcDB, checkpointDB, queues, retries, retryInter
     that.cancelled = true;
     that.sEmit('cancelled');
     that.removeAllListeners();
-    if(changes && continuous)
+    if(changes && opts.continuous)
     {
           changes.cancel();
     }

@@ -12,7 +12,10 @@ var utils = require('utils');
 var jsonCrypto = require('jsonCrypto');
 var Buff = require('buffer').Buffer;
 var processor = require('./processor.js');
-var changeQueue = require('./changeQueue.js');
+var processorQueue = require('./processorQueue.js');
+var processorQueueStack = require('./processorQueueStack.js');
+
+var pouchService = require('./pouchService.js');
 
 
 var genReplicationId = function(src, target, filter, log) {
@@ -28,14 +31,15 @@ var genReplicationId = function(src, target, filter, log) {
 };
 
 
-module.exports  = function (src, target, filter, retries, retryInterval, continuous, initLog){
+module.exports  = function (src, target, opts, initLog){
+  var filter = opts.filter || null;
   var repId = genReplicationId(src, target, filter, initLog.wrap('genReplicationId'));
 
-  var awaitingDiff = changeQueue(getAwaitingDiffProcessor(filter, target));
-  var awaitingGet = changeQueue(getAwaitingGetProcessor(src));
-  var awaitingSave = changeQueue(getAwaitingSaveProcessor(target));
+  var awaitingDiff = processorQueue(getAwaitingDiffProcessor(filter, target));
+  var awaitingGet = processorQueue(getAwaitingGetProcessor(src));
+  var awaitingSave = processorQueue(getAwaitingSaveProcessor(target));
 
-  var that = changeService(repId, src, target, [awaitingDiff, awaitingGet, awaitingSave], retries, retryInterval, continuous, initLog.wrap('changeService'));
+  var that = pouchService(repId, src, target, [awaitingDiff, awaitingGet, awaitingSave], opts, initLog.wrap('changeService'));
 
   return that;
 };
@@ -80,8 +84,8 @@ var getAwaitingDiffProcessor = function(filter, target){
             {
               payload.missing = [];
             }
-            itemProcessed(seq, payload);
             delete queue[seq];
+            itemProcessed(seq, payload);
         });
         callback();
       }));
@@ -91,7 +95,7 @@ var getAwaitingDiffProcessor = function(filter, target){
 
 
 var getAwaitingGetProcessor =  function(src){
-  var that = processor(function(seq, payload, callback){
+  var that = processor(function(seq, payload, logs, callback){
     var foundRevs = [];
     var missing = payload.missing;
     var change = payload.change;
@@ -111,12 +115,12 @@ var getAwaitingGetProcessor =  function(src){
       var payload = {change: change, revs: foundRevs};
       callback(null, payload);
     });
-  }, logs);
+  });
   return that;
 };
 
 var getAwaitingSaveProcessor = function(target){
-  var p = processor(function(seq, payload, callback){
+  var p = processor(function(seq, payload, logs, callback){
     var change = payload.change;
     var revs = payload.revs;
     async.forEachSeries(revs, function(rev, cbk){
@@ -160,7 +164,7 @@ var getAwaitingSaveProcessor = function(target){
       }
       callback(null, change);
     });
-  }, logs);
+  });
   return p;
 };
 

@@ -22,7 +22,6 @@ var masterLog = utils.log().wrap('replicator');
 
 var lib = require('../src/replicator.js');
 
-var nano = require('nano');
 var async = require('async');
 
 var remoteDbUrl = 'http://admin:password@localhost:5984/';
@@ -46,110 +45,33 @@ describe('pouchManager.replicator', function () {
     pouch = Pouch;
   }
 
-var cleanDB = function(done){
-    var service = nano(remoteDbUrl);
+  var cleanDB = function(done){
 
-    async.forEachSeries(['4', '5', '6', '7'], function(name, cbk){
-      service.db.get('test_replicator_' + name, function(error, body){
-        if(!error)
-        {
-          service.db.destroy('test_replicator_' + name, cbk);
-        }
-        else
-        {
-          cbk();
-        }
+    async.forEachSeries(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], function(name, cbk){
+
+      pouch.destroy(remoteDbUrl + '/test_replicator_' + name, function(error, body){
+        cbk();
       });
     }, function(error){
       done(error);
     });
   };
 
+
   before(function(done){
-    cleanDB(done);
+    cleanDB(function(){
+      done();
+    });
   });
   after(function(done){
     cleanDB(done);
   });
 
-it('1: processor should call ', function (done) {
+
+
+
+it('1: replicate, should fire initialReplicate', function (done) {
  var mylog = masterLog.wrap('1');
- var onDone = function (error) {
-  if (error) {
-    mylog.error(error);
-  }
-    done(error);
-  };
-
-  var changes = {test: 1};
-  var queueProcessor = lib.processor(function(id, data, callback){
-    assert.equal('test', id);
-    callback();
-  }, mylog);
-  queueProcessor(changes, function(error){
-    assert.equal('undefined', typeof changes.test);
-    onDone(error);
-  });
-});
-
-
-it('2: processor should call each', function (done) {
- var mylog = masterLog.wrap('2');
- var onDone = function (error) {
-  if (error) {
-    mylog.error(error);
-  }
-    done(error);
-  };
-  var changes = {test: 1, test2: 2};
-  var count = 0;
-  var queueProcessor = lib.processor(function(id, data, callback){
-    count++;
-    callback();
-  }, mylog);
-  queueProcessor(changes, function(error){
-    assert.equal('undefined', typeof changes.test);
-    assert.equal('undefined', typeof changes.test2);
-    assert.equal(2, count);
-    onDone();
-  });
-});
-
-it('3: change queue', function (done) {
- var mylog = masterLog.wrap('3');
- var onDone = function (error) {
-  if (error) {
-    mylog.error(error);
-  }
-    done(error);
-  };
-
-  var queueProcessor = function(queue, callback){
-    assert.equal('hello', queue[1].id);
-    delete queue[1];
-    callback();
-  };
-
-  var queue = lib.changeQueue(queueProcessor);
-  queue.on('error', function(error){
-    onDone(error);
-  });
-  queue.on('log', function(message){
-   mylog(message);
-  });
-  queue.on('state', function(message){
-    if(message === 'idle')
-    {
-      onDone();
-    }
-  });
-
-  queue.enqueue(1, {id: 'hello'});
-});
-
-
-it('4: replicate, should fire initialReplicate', function (done) {
- var mylog = masterLog.wrap('4');
  var onDone = function (error) {
   if (error) {
     mylog.error(error);
@@ -167,7 +89,7 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
     pouch.destroy(dbName, utils.safe(onDone, function (error) {
       pouch(dbName, utils.cb(onDone, function (localdb) {
       mylog('initiating replication');
-        var replicator = lib(serverdb, localdb, {continuous: false}, mylog.wrap('init replicator'));
+        var replicator = lib(serverdb, localdb, {}, mylog.wrap('init replicator'));
         replicator.on('error', mylog.wrap('replicator').error);
         replicator.on('setupComplete', function(){
           replicator.on('initialReplicateComplete', function(change){
@@ -181,8 +103,8 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
 }));
 });
 
-it('5: replicate, should fire upToDate', function (done) {
- var mylog = masterLog.wrap('5');
+it('2: replicate, should fire upToDate', function (done) {
+ var mylog = masterLog.wrap('2');
  var onDone = function (error) {
   if (error) {
     mylog.error(error);
@@ -199,7 +121,7 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
     mylog('creating new database: ' + dbName);
     pouch.destroy(dbName, utils.safe(onDone, function (error) {
       pouch(dbName, utils.cb(onDone, function (localdb) {
-         var replicator = lib(serverdb, localdb, {continuous: false}, mylog.wrap('init replicator'));
+        var replicator = lib(serverdb, localdb, {}, mylog.wrap('init replicator'));
         replicator.on('error', function(error){
             mylog.error(error);
           });
@@ -218,8 +140,8 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
 });
 
 
-it('6: replicate, should replicate an item', function (done) {
- var mylog = masterLog.wrap('6');
+it('3: replicate, should replicate an item', function (done) {
+ var mylog = masterLog.wrap('3');
  var onDone = function (err) {
   if (typeof err !== 'undefined') {
     mylog.error(err);
@@ -238,16 +160,14 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
       pouch(dbName, utils.cb(onDone, function (localdb) {
         serverdb.put({_id: 'testitem'}, utils.cb(onDone, function(){
 
-          var replicator = lib(serverdb, localdb, {continuous: false}, mylog.wrap('init replicator'));
+          var replicator = lib(serverdb, localdb, {}, mylog.wrap('init replicator'));
+          utils.log.emitterToLog(replicator, mylog.wrap('replicator'));
+          
           replicator.on('error', function(error){
-            mylog.error(error);
             onDone(error);
           });
 
-          replicator.on('log', function(message){
-            mylog.log(message);
-          });
-
+        
           replicator.on('initialReplicateComplete', function(change){
             mylog('checking doc is synced');
             localdb.get('testitem', {}, utils.safe(onDone, function(err3, item){
@@ -264,8 +184,8 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
 });
 
 
-it('7: replicate, should be continuous', function (done) {
- var mylog = masterLog.wrap('7');
+it('4: replicate, should be continuous', function (done) {
+ var mylog = masterLog.wrap('4');
  var onDone = function (err) {
   if (typeof err !== 'undefined') {
     mylog.error(err);
@@ -285,14 +205,11 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
           var count =0;
 
           var replicator = lib(serverdb, localdb, {continuous: true}, mylog.wrap('init replicator'));
+          utils.log.emitterToLog(replicator, mylog.wrap('replicator'));
           replicator.on('error', function(error){
-            mylog.error(error);
             onDone(error);
           });
 
-          replicator.on('log', function(message){
-            mylog.log(message);
-          });
 
           replicator.on('upToDate', function(seq){
             mylog.log('upToDate called');

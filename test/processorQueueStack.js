@@ -59,5 +59,5 @@ describe('processorQueueStack', function () {
 		utils.log.emitterToLog(stack, mylog);
 
 		queue1.enqueue(1, {id: 'hello', count: 1});
-	})
-})
+	});
+});

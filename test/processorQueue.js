@@ -38,7 +38,7 @@ describe('processorQueue', function () {
     assert.ok(callback);
 
     assert.equal('hello', queue[1].id);
-    var item =  queue[1]
+    var item =  queue[1];
     delete queue[1];
     itemProcessed(item);
     callback();
@@ -75,7 +75,7 @@ describe('processorQueue', function () {
     assert.ok(callback);
 
     assert.equal('hello', queue[1].id);
-    var item =  queue[1]
+    var item =  queue[1];
     delete queue[1];
     itemProcessed(item.id, item);
     callback();
@@ -89,7 +89,7 @@ describe('processorQueue', function () {
    mylog(message);
  });
 
-  var payload = {id: 'hello'}
+  var payload = {id: 'hello'};
   queue.on('itemProcessed', function(seq, pay){
      assert.equal('hello', seq);
      assert.equal(payload, pay);
