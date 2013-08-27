@@ -136,11 +136,11 @@ describe('offlinePouch', function () {
     };
 
      var fakePouch = function(url, cbk){
-      assert.equal(rootDir + 'localhost-5984-test_offlinepouch_3', url);
+      assert.equal(rootDir + 'test_offlinepouch_3', url);
       cbk(null, {});
     };
 
-    lib.getLocalDb(fakePouch, serverURL + '/test_offlinepouch_3',log.wrap('getting localDB'), utils.cb(onDone, function(db){
+    lib.getLocalDb(fakePouch, 'test_offlinepouch_3', false, log.wrap('getting localDB'), utils.cb(onDone, function(db){
       onDone();
     }));
   });
@@ -160,10 +160,11 @@ describe('offlinePouch', function () {
       return false;
     });
 
-    lib(serverURL + '/test_offlinepouch_4',{retryDelay: 2}, log.wrap('creating offline pouch'),  utils.cb(onDone, function(offlinePouch){
+    var offlinePouch = lib('test_offlinepouch_4', serverURL + '/test_offlinepouch_4',{retryDelay: 2}, log.wrap('creating offline pouch'));
+    offlinePouch.on('setupComplete', function(){
       offlinePouch.close();
       onDone();
-    }));
+    });
   });
 
   it('5: if offline supported should create local db', function (done) {
@@ -186,7 +187,7 @@ describe('offlinePouch', function () {
 
 
         var offlinePouchLog = log.wrap('offlinePouch');
-        lib(serverURL + '/test_offlinepouch_5', {retryDelay: 2, waitForInitialReplicate: true}, log.wrap('creating offline pouch'),  utils.cb(onDone, function(offlinePouch){
+        var offlinePouch = lib('test_offlinepouch_5', serverURL + '/test_offlinepouch_5', {retryDelay: 2, waitForInitialReplicate: true}, log.wrap('creating offline pouch'));
           offlinePouch.on('downUpToDate', function(){
             offlinePouch.get('testdoc', utils.cb(onDone, function(doc){
               assert.equal('testdoc', doc._id);
@@ -197,8 +198,7 @@ describe('offlinePouch', function () {
 
           utils.log.emitterToLog(offlinePouch, offlinePouchLog);
         }));
-      }));
-    })); 
+      })); 
     }));
   });
 
@@ -220,11 +220,13 @@ describe('offlinePouch', function () {
       return true;
     });
 
-    lib(noServerURL,{retries: -1, retryDelay: 200, waitForInitialReplicate: false}, log.wrap('creating offline pouch'),  utils.cb(onDone, function(offlinePouch){
+    var offlinePouch =lib('noServer', noServerURL,{retries: -1, retryDelay: 200, waitForInitialReplicate: false}, log.wrap('creating offline pouch'));
+    offlinePouch.on('setupComplete', function(){
       offlinePouch.put({_id: 'testdoc2'}, utils.cb(onDone, function(){
         offlinePouch.close();
         onDone();
       }));
-    }));
+    });
+
   });
 });

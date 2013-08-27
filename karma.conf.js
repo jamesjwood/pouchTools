@@ -11,7 +11,7 @@ files = [
   MOCHA,
   MOCHA_ADAPTER,
 './lib/pouch.min.js',
-'./test/testacularUnitSetup.js',
+'./karma/testacularUnitSetup.js',
 './stage/test.js'
 ];
 

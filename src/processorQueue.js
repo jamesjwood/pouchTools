@@ -2,6 +2,7 @@ var events = require('events');
 var utils = require('utils');
 var jsonCrypto = require('jsonCrypto');
 var async = require('async');
+var assert = require('assert');
 
 module.exports =function(processor, retryInterval){
   var queue = {};
@@ -32,19 +33,18 @@ module.exports =function(processor, retryInterval){
     }
   };
 
-  var allItemsProcesseed = function(orginalAsArray, updated){
+  var allItemsProcesseed = function(orginalAsArray, updated, unprocessed){
     var all = true;
-    if(Object.keys(updated).length === 0)
+    if(Object.keys(updated).length !== 0)
     {
-      return all;
+      orginalAsArray.map(function(key){
+        if(typeof updated[key] !== undefined)
+        {
+          unprocessed.push(key);
+          all = false;
+        }
+      });
     }
-    orginalAsArray.map(function(key){
-      if(typeof updated[key] !== undefined)
-      {
-        all = false;
-        return;
-      }
-    });
     return all;
   };
 
@@ -54,40 +54,42 @@ module.exports =function(processor, retryInterval){
     {
       if(error)
       {
-        setOffline(true);
-        log('error processing queue');
-        that.emit('error', error);
-        that.cancel();
-        return;
+        if(typeof error.critical === 'undefined' || error.critical === null || error.critical === true)
+        {
+          setOffline(true);
+          log('error processing queue');
+          that.emit('error', error);
+          that.cancel();
+          return;
+        }
+        else
+        {
+          log('items failed to process, scheduling a retry in ' + retryInterval/100 + ' seconds');
+          setOffline(true);
+          setTimeout(that.process, retryInterval);
+          processing = false;
+          that.emit('state', 'idle');
+          return;
+        }
       }
       that.emit('log', 'done processing');
       processing = false;
-
-      if(allItemsProcesseed(itemsBeingProcessed, queue) === true)
-      {
-        setOffline(false);
-        if(awaitingProcessing)
+      setOffline(false);
+      if(awaitingProcessing)
         {
           log('more added while processing');
           setTimeout(that.process, 0);
         }
         else
-        {
-          that.emit('state', 'idle');
-        }
-      }
-      else
       {
-        log('some items failed to process, scheduling a retry in ' + retryInterval/100 + ' seconds');
-        setOffline(true);
-        setTimeout(that.process, retryInterval);
-        that.emit('state', 'idle');
+          awaitingProcessing = false;
+          that.emit('state', 'idle');
       }
     }
   };
-  var itemProcessed = function(seq, a, b, c, d, e){
-    log('raising item processed event');
-    that.emit('itemProcessed', seq, a, b, c, d, e);
+  var itemProcessed = function(seq, payload){
+    log('raising item processed event for ' + seq);
+    that.emit('itemProcessed', seq, payload);
   };
 
   that.process = utils.safe.catchSyncronousErrors(that.doneProcessing, function(){

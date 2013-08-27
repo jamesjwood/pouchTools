@@ -9,8 +9,6 @@ var utils = require('utils');
 var events = require('events');
 var sinon = require('sinon');
 
-var pouch = require('pouchdb');
-
 
 
 var async = require('async');
@@ -118,23 +116,23 @@ describe('designDoc', function () {
 		];
 		lib(VALIDATE_PATH, RELATIVE_PATH, typeSpecs, [signedUserCert], log.wrap('genrating design doc'), utils.cb(onDone, function(designDoc){
 			var testDoc = {
-			_id: 'testDoc_1',
-			creator: 'user_1'
-		};
-		testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert, true, log);
+				_id: 'testDoc_1',
+				creator: 'user_1'
+			};
+			testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert, true, log);
 
-		pouch(serverURL + 'test_designdoc_2', utils.cb(onDone, function(db){
-			db.put(designDoc, utils.cb(onDone, function(){
-				db.put(testDoc, utils.safe(onDone, function(error){
-					assert.ok(error);
-					assert.equal(0, error.reason.indexOf('Must have a type'));
-					done();
+			pouch(serverURL + '/test_designdoc_2', utils.cb(onDone, function(db){
+				log('putting doc');
+				db.put(designDoc, utils.cb(onDone, function(){
+					log('checking doc');
+					db.put(testDoc, utils.safe(onDone, function(error){
+						assert.ok(error);
+						assert.equal(0, error.reason.indexOf('Must have a type'));
+						done();
+					}));
 				}));
 			}));
 		}));
-		}));
-
-		
 	});
 
 

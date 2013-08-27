@@ -93,9 +93,11 @@ var rootCert = jsonCrypto.createCert('root', rootKeyBufferPair.publicPEM);
 				});
 			}));
 
-			myService.on('changeDone', function(){
+			myService.on('changeDone', utils.safe.catchSyncronousErrors(onDone, function(seq){
+				assert.ok(seq);
+				assert.equal(seq, 1);
 				onDone();
-			});
+			}));
 		}));
 	});
 });

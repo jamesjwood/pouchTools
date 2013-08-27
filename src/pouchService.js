@@ -8,19 +8,17 @@ var async = require('async');
 var assert = require('assert');
 
 
-var getAwaitingNotifyProcessor = function(onChange, writeCheckpoint, source_start_seq, checkpointDB, id){
-  var p = processor(function(seq, change, mlog, callback){
-    mlog('Notify processor, start at:' + source_start_seq + ' seq is ' + seq);
-    if(source_start_seq <= seq)
+var getAwaitingNotifyProcessor = function(writeCheckpoint, target_at_seq, checkpointDB, id){
+  var p = processor(function(seq, payload, mlog, callback){
+    mlog('Notify processor, start at:' + target_at_seq + ' seq is ' + seq);
+    if(target_at_seq <= seq)
     {
       mlog('writing checkpoint at: ' + seq);
       writeCheckpoint(checkpointDB, id, seq, mlog.wrap('writeCheckpoint'), utils.cb(callback, function(){
-        onChange(change);
         callback();
       }));
       return;
     }
-    onChange(change);
     callback();
   });
   return p;
@@ -37,13 +35,12 @@ var setupQueues = function(queues, that, checkpointDB, id, log){
   {
     throw new Error('you must pass a non zero length queues variable');
   }
+  var notifyQueue = processorQueue(getAwaitingNotifyProcessor(writeCheckpoint, that.target_at_seq, checkpointDB, id));
 
 
-  var onChangeDone = function(){
-    that.changeDone.apply(null, arguments);
-  };
-
-  var notifyQueue = processorQueue(getAwaitingNotifyProcessor(onChangeDone, writeCheckpoint, that.source_seq, checkpointDB, id));
+  notifyQueue.on('itemProcessed', function(seq){
+    that.changeDone.apply(null, [seq]);
+  });
 
   var newQueue = [];
   newQueue = newQueue.concat(queues).concat([notifyQueue]);
@@ -102,7 +99,14 @@ var writeCheckpoint = function(checkpointDB, id, seq, log, callback) {
 
 module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
 {
-  opts.retries = opts.retries || 0;
+  assert.ok(id);
+  assert.ok(srcDB);
+  assert.ok(checkpointDB);
+  assert.ok(queues);
+  assert.ok(opts);
+  assert.ok(initLog);
+
+  var retries = opts.retries || 0;
   opts.filter = opts.filter || null;
   opts.reset = opts.reset || false;
   opts.continuous = opts.continuous || false;
@@ -115,14 +119,15 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
   that.outstanding_changes =0;
   that.offline = true;
 
-  that.sEmit = function(a, b, c, d){
+  that.sEmit = function(){
     try
     {
-      that.emit(a, b, c, d);
+      that.emit.apply(that, arguments);
     }
     catch(error)
     {
-      that.emit('error', error);
+      console.log('Error emitting');
+      console.error(error);
     }
   };
 
@@ -137,9 +142,9 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
   };
 
   var setupComplete = function(error){
+    log('setupComplete');
     if(error)
     {
-      log('error setting up');
       if(retries !== 0)
       {
         log('failed to setup, retrying in 0.5 seconds');
@@ -153,7 +158,8 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
       }
       else
       {
-        that.emit('error', error);
+        log('error setting up, emitting error');
+        that.sEmit('error', error);
       }
       return;
     }
@@ -162,8 +168,8 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
         return;
     }
     log('setup complete, target at ' + that.target_at_seq + ' source is at ' + that.source_seq);
-    that.sEmit('setupComplete');
-    if(that.target_at_seq == that.source_seq)
+    that.emit('setupComplete');
+    if(that.target_at_seq >= that.source_seq)
     {
       log('target and source already up to date');
       upToDate();
@@ -175,17 +181,17 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
     }
   };
 
-  var setup = utils.safe(setupComplete, function(callback){
+  var setup = utils.safe(setupComplete, function(){
     if(that.cancelled)
     {
         return;
     }
     log('getting sourceDB info');
-    srcDB.info(utils.cb(callback, function(info){
+    srcDB.info(utils.cb(setupComplete, function(info){
       that.source_seq = info.update_seq;
       log('sourceDB at ' + that.source_seq);
       log('gettting checkpoint');
-      fetchCheckpoint(checkpointDB, id, log.wrap('getting checkpoint'), utils.cb(callback, function(checkpoint) {
+      fetchCheckpoint(checkpointDB, id, log.wrap('getting checkpoint'), utils.cb(setupComplete, function(checkpoint) {
         if(that.cancelled)
         {
           return;
@@ -201,44 +207,49 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
 
 
 
-        that.changeDone = function(change){
+        that.changeDone = function(seq){
+          assert.ok(seq);
+          log('change done: ' + seq);
           if(that.cancelled === true)
           {
             return;
           }
           that.outstanding_changes--; // = awaitingNotify.queued + awaitingSave.queued + awaitingGet.queued + awaitingDiff.queued;
-          if(change.seq >= that.source_seq)
+          if(seq >= that.source_seq)
           {
-            that.source_seq = change.seq;
+            that.source_seq = seq;
           }
-          that.sEmit('changeDone', change);
+          that.sEmit('changeDone', seq);
 
-          if(change.seq === info.update_seq)
+          if(seq == info.update_seq)
           {
-            initialReplicateComplete(change.seq);
+            initialReplicateComplete(seq);
           }
           else
           {
-            log('not initial complete, at '  + change.seq + ' initial seq is ' + info.update_seq);
+            log('not initial complete, at '  + seq + ' initial seq is ' + info.update_seq);
           }
 
-          if(change.seq === that.source_seq)
+          if(seq == that.source_seq)
           {
-            upToDate(change.seq);
+            upToDate(seq);
           }
           else
           {
-            log('not up to date, at ' + change.seq + ' sourcs is at ' + that.source_seq);
+            log('not up to date, at ' + seq + ' sourcs is at ' + that.source_seq);
           }
         };
 
 
         var incomingChange = function(change){
-          log('incoming change: ' + change.seq);
-          that.total_changes++;
-          that.outstanding_changes++; // = awaitingNotify.queued + awaitingSave.queued + awaitingGet.queued + awaitingDiff.queued;
-          that.queueStack.enqueue(change.seq, change);
-          that.sEmit('changeQueued', change);
+          if(!that.cancelled)
+          {
+            log('incoming change: ' + change.seq);
+            that.total_changes++;
+            that.outstanding_changes++; // = awaitingNotify.queued + awaitingSave.queued + awaitingGet.queued + awaitingDiff.queued;
+            that.queueStack.enqueue(change.seq, change);
+            that.sEmit('changeQueued', change);
+          }
         };
 
         var repOpts = {
@@ -262,7 +273,7 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
         };
 
         changes = srcDB.changes(repOpts);
-        callback();
+        setupComplete();
       }));
     }));
   });
@@ -272,7 +283,6 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
     log('cancelling');
     that.cancelled = true;
     that.sEmit('cancelled');
-    that.removeAllListeners();
     if(changes && opts.continuous)
     {
           changes.cancel();
@@ -281,13 +291,15 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
     {
           that.queueStack.cancel();
     }
+    log('cancelled');
   };
 
   that.on('error', function(){
     that.cancel();
   });
 
-  setup(setupComplete);
-
+  setup();
+ 
+    
   return that;
 };

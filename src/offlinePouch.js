@@ -3,24 +3,31 @@ var utils = require('utils');
 var async = require('async');
 var events = require('events');
 var replicator = require('./replicator.js');
-
+var assert = require('assert');
 var url = require('url');
 
 var pouch;
 if(typeof window != 'undefined')
 {
-  pouch= Pouch;
+	pouch= Pouch;
 
 }
 else
 {
-  pouch = require('pouchdb');
+	pouch = require('pouchdb');
 }
 
 
-module.exports = function(url, opts, log, callback){
+module.exports = function(name, url, opts, log){
+	assert.ok('name');
+	assert.ok('opts');
+	assert.ok('log');
 
 	var retryDelay = opts.retryDelay || 5000;
+	if(typeof opts.wipeLocal === 'undefined')
+	{
+		opts.wipeLocal = false;
+	}
 	var waitForInitialReplicate = true;
 	if(typeof opts.waitForInitialReplicate !== undefined)
 	{
@@ -50,8 +57,15 @@ module.exports = function(url, opts, log, callback){
 
 	var that = new events.EventEmitter();
 
+	that.setupComplete = false;
+
+
 	var wrapActiveDBFunction = function(name){
 		that[name] = function(){
+			if(!that.setupComplete)
+			{
+				throw new Error('setup not complete');	
+			}
 			activeDB[name].apply(activeDB, arguments);
 		};
 	};
@@ -72,18 +86,34 @@ module.exports = function(url, opts, log, callback){
 	that.close = function(){
 		if(that.replicator)
 		{
+			log('cancelling replicator');
 			that.replicator.cancel();
 		}
-		that.removeAllListeners();
 		if(serverDB)
 		{
+			log('closing server db');
 			serverDB.close();
 		}
 		if(localDB)
 		{
+			log('closing local db');
 			localDB.close();
 		}
+		that.removeAllListeners();
 	};
+
+	var setupComplete = function(error){
+		if(error)
+		{
+			log('setup error');
+			log.error(error);
+			return;
+		}
+		that.setupComplete = true;
+		that.emit('setupComplete');
+	};
+
+
 	that.location = '';
 	that.status = 'initializing';
 	var setLocation = function(location){
@@ -93,20 +123,28 @@ module.exports = function(url, opts, log, callback){
 			that.emit('locationChanged', location);
 		}
 	};
-	if(!module.exports.offlineSupported())
+	if(!module.exports.offlineSupported() || opts.serverOnly)
 	{
+		if (opts.startOffline)
+		{
+			throw new Error('startOffline requested but offline is not supported');
+		}
 		retries = 0;
 		log('no browser support for local data, returning serverdb');
-		module.exports.getServerDb(pouch, url, retries, retryDelay, log.wrap('getting serverdb'),  utils.cb(callback, function(sdb){
+		module.exports.getServerDb(pouch, url, retries, retryDelay, log.wrap('getting serverdb'),  utils.cb(setupComplete, function(sdb){
 			log('got server db');
 			serverDB = sdb;
 			setActiveDB(serverDB, 'server');
-			callback(null, that);
+			setupComplete();
 		}));
-		return;
+		return that;
 	}
+
 	log('browser supports local data');
 
+
+
+	
 
 	var runLog = utils.log(that);
 
@@ -127,73 +165,84 @@ module.exports = function(url, opts, log, callback){
 		});
 	};
 
-	var replicationSetup = function(error){
-		if(error)
-		{
-			runLog('replication setup error');
-			runLog.error(error);
-		}
+
+	that.goOnline = function(serverurl, rlog, cbk){
+		retries = -1;
+		rlog('getting serverdb');
+		module.exports.getServerDb(pouch,serverurl, retries, retryDelay,  rlog.wrap('getting serverdb'), utils.cb(cbk, function(sdb){
+			rlog('init replication');
+			serverDB= sdb;
+			//if there is no active db then use the server, better than nothing
+			if(!activeDB)
+			{
+				setActiveDB(serverDB, 'server');
+			}
+			if(!waitForInitialReplicate)
+			{
+				cbk();					
+			}
+			var upReplicator = replicator(localDB, serverDB, {filter: filter, continuous: true}, rlog.wrap('init up replicator'));
+			setReplicator('up', upReplicator);
+			var downReplicator = replicator(serverDB, localDB, {filter: filter, continuous: true}, rlog.wrap('init down replicator'));
+			setReplicator('down', downReplicator);
+
+			downReplicator.on('initialReplicateComplete',  function(){
+				setActiveDB(localDB, 'local');
+				if(waitForInitialReplicate)
+				{
+					cbk();					
+				}
+			});
+		}));
 	};
 
+	module.exports.getLocalDb(pouch, name, opts.wipeLocal, log.wrap('get local db'),utils.cb(setupComplete, function(ldb){
+		localDB = ldb;
 
-	if(module.exports.localDBAlreadyCreated(url) === true)
-	{
-		log('local data already created');
-		module.exports.getLocalDb(pouch,url, utils.cb(callback, function(ldb){
-			localDB = ldb;
+		if(opts.startOffline)
+		{
+			log('local db only');
 			setActiveDB(localDB, 'local');
-			retries = -1;
-			log('getting serverdb');
-			module.exports.getServerDb(pouch,url, retries, retryDelay,  log.wrap('getting serverdb'), utils.cb(replicationSetup, function(sdb){
-				log('init replication');
-				serverDB= sdb;
-				upReplicator = replicator(localDB, serverDB, {filter: filter, continuous: true}, log.wrap('init up replicator'));
-				setReplicator('up', upReplicator);
-				downReplicator = replicator(serverDB, localDB, {filter: filter, continuous: true}, log.wrap('init down replicator'));
-				setReplicator('down', downReplicator);
-				log('init replication complete');
-			}));
-			callback(null, that);
-		}));
-	}
-	else
-	{
-		log('local data not already created');
-		module.exports.getLocalDb(pouch, url, log.wrap('get local db'),utils.cb(callback, function(ldb){
-			localDB = ldb;
-			if(waitForInitialReplicate === false)
-			{
-				log('not waiting for initial replication, db ready to use');
-				setActiveDB(localDB, 'local');
-				callback(null, that);
-			}
-			else
+			setupComplete();
+			return;
+		}
+		if(module.exports.localDBAlreadyCreated(url) === true)
+		{
+			log('local data already created');
+			setActiveDB(localDB, 'local');
+			that.goOnline(url, runLog.wrap('going online'), function(error){
+				if(error){
+					runLog.error(error);
+				}
+			});
+			setupComplete();
+		}
+		else
+		{
+			log('local data not already created');
+			if(waitForInitialReplicate === true)
 			{
 				log('waiting for initial replication');
 				retries = 10;
+				that.goOnline(url, log.wrap('going online'), utils.cb(setupComplete, function(){
+					setupComplete();
+				}));
+				
 			}
-
-			module.exports.getServerDb(pouch, url, retries, retryDelay, log.wrap('getting serverdb'), utils.cb(callback, function(sdb){
-				serverDB = sdb;
-				if(waitForInitialReplicate === true)
-				{
-					setActiveDB(serverDB, 'server');
-					callback(null, that);
-				}
-				log('init replication');
-				upReplicator = replicator(localDB, serverDB, {filter: filter, continuous: true}, log.wrap('init up replicator'));
-				setReplicator('up', upReplicator);
-
-				downReplicator = replicator(serverDB, localDB, {filter: filter, continuous: true}, log.wrap('init down replicator'));
-				setReplicator('down', downReplicator);
-				downReplicator.on('initialReplicateComplete',  function(){
-					setActiveDB(localDB, 'local');
+			else
+			{
+				log('not waiting for initial replication, db ready to use');
+				setActiveDB(localDB, 'local');
+				that.goOnline(url, runLog.wrap('going online'), function(error){
+					if(error){
+						runLog.error(error);
+					}
 				});
-
-				log('init replication complete');
-			}));
-		}));
-	}
+				setupComplete();
+			}
+		}
+	}));
+	return that;
 };
 
 
@@ -232,39 +281,47 @@ module.exports.getServerDb = function(pouchdb, url, retries, retryDelay, log, ca
 	})();
 };
 
-
-module.exports.getLocalDb = function(pouchdb, serverUri, log, callback){
-	
-		utils.safe(callback, function(){
-		
-		var localDBName = module.exports.getLocalDBName(serverUri);
+module.exports.getLocalDb = function(pouchdb, name, wipeLocal, log, callback){
+	var localDBName = module.exports.getLocalDBName(name);
+	log('creating localdb at:' + localDBName);
+	utils.safe(callback, function(){
 		log('getting local db: ' + localDBName);
-		pouchdb(localDBName, utils.cb(callback, function(db){
-			callback(null, db);
-		}));
+		var openDB = function(){
+			pouchdb(localDBName, utils.cb(callback, function(db){
+				callback(null, db);
+			}));
+		};
+		if(wipeLocal)
+		{
+			pouchdb.destroy(localDBName, utils.safe.catchSyncronousErrors(callback, function(){
+				openDB();
+			}));
+		}
+		else
+		{
+			openDB();
+		}
+
 	})();
 };
-module.exports.getLocalDBName = function(serverUri){
-	var serverURL = url.parse(serverUri);
-	var localDBName = serverURL.hostname;
-		if(serverURL.port)
-		{
-			localDBName = localDBName + "-" + serverURL.port;
-		}  
+module.exports.getLocalDBName = function(name){
+	var localDBName;
 
-		localDBName = localDBName + serverURL.pathname.replace('/', '-');
-
-		if(typeof window === 'undefined')
-		{
-			localDBName = 'stage/' + localDBName;
-		}
-		return localDBName;
+	if(typeof window === 'undefined')
+	{
+		localDBName = 'stage/' + name;
+	}
+	else
+	{
+		localDBName = name;
+	}
+	return localDBName;
 };
 
 
 
 module.exports.offlineSupported = function(){
-	if(!window)
+	if(typeof window === 'undefined')
 	{
 		//node, use levelDB
 		return true;

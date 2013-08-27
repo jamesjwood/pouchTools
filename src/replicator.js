@@ -48,6 +48,11 @@ module.exports  = function (src, target, opts, initLog){
 //the processors
 var getAwaitingDiffProcessor = function(filter, target){
   var that = function(queue, itemProcessed, log, callback){
+      assert.ok(queue);
+      assert.ok(itemProcessed);
+      assert.ok(log);
+      assert.ok(callback);
+
       var diff = {};
       var processing = {};
 
@@ -66,7 +71,7 @@ var getAwaitingDiffProcessor = function(filter, target){
         if(error)
         {
           logs('could not process awaiting diffs, possibly disconnected');
-          callback();
+          callback(error);
           return;
         }
         Object.keys(processing).map(function(seq){
@@ -96,13 +101,26 @@ var getAwaitingDiffProcessor = function(filter, target){
 
 var getAwaitingGetProcessor =  function(src){
   var that = processor(function(seq, payload, logs, callback){
+    assert.ok(seq);
+    assert.ok(payload);
+    assert.ok(logs);
+    assert.ok(callback);
+
     var foundRevs = [];
     var missing = payload.missing;
     var change = payload.change;
-
+    logs('get processor running');
     async.forEachSeries(missing, function(rev, cbk2){
-      src.get(change.id, {revs: true, rev: rev, attachments: true}, utils.cb(cbk2, function(rev) {
-        foundRevs.push(rev);
+      logs('gettig revs for ' + rev);
+      src.get(change.id, {revs: true, rev: rev, attachments: true}, utils.safe(cbk2, function(error, got) {
+        if(error)
+        {
+          logs('error getting rev: ' + rev + ' id : '  + change.id + ' for seq: ' + seq);
+          cbk2(error);
+          return;
+        }
+        logs('successfully got rev: ' + rev + ' id : '  + change.id + ' for seq: ' + seq);
+        foundRevs.push(got);
         cbk2();
       }));
     }, function(error){
@@ -112,6 +130,7 @@ var getAwaitingGetProcessor =  function(src){
         callback(error);
         return;
       }
+      logs('successfully got all revs');
       var payload = {change: change, revs: foundRevs};
       callback(null, payload);
     });
@@ -124,15 +143,15 @@ var getAwaitingSaveProcessor = function(target){
     var change = payload.change;
     var revs = payload.revs;
     async.forEachSeries(revs, function(rev, cbk){
-      logs('saving rev');
-      logs(JSON.stringify(rev));
+      assert.ok(rev);
+      logs('saving rev' + rev._rev);
       target.bulkDocs({docs: [rev]}, {new_edits: false}, utils.safe.catchSyncronousErrors(cbk, function(error, response){
         if(error)
         {
-          logs('Possible problem saving diff: ' + rev._dif);
+          logs('Possible problem saving diff: ' + rev._rev);
           if(error.status !==500)
           {
-            logs.error(error, 'saving record');
+            logs.error(error, 'saving rev');
             cbk(error);
             return;
           }
@@ -141,17 +160,16 @@ var getAwaitingSaveProcessor = function(target){
             //there is a duplicate record already, that is ok
           }
         }
-        else
+        else if(response.length > 0)
         {
-          assert.equal(response.length, 1);
-          var revResponse = response[0];
-          if(revResponse.error)
-          {
-            var e = new Error('bulkDocs error: ' + revResponse.error + ', ' + revResponse.reason + ' for rev: ' + revResponse.rev + ' id: ' + revResponse.id);
-            logs.error(e, 'bulkDocs error');
-            cbk(e);
-            return;
-          }
+            var revResponse = response[0];
+            if(revResponse.error)
+            {
+              var e = new Error('bulkDocs error: ' + revResponse.error + ', ' + revResponse.reason + ' for rev: ' + revResponse.rev + ' id: ' + revResponse.id);
+              logs.error(e, 'bulkDocs error');
+              cbk(e);
+              return;
+            }
         }
         logs('successfully saved: ' + rev._id);
         cbk();

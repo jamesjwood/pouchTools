@@ -158,6 +158,7 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
     mylog('creating new database: ' + dbName);
     pouch.destroy(dbName, utils.safe(onDone, function (error) {
       pouch(dbName, utils.cb(onDone, function (localdb) {
+        mylog('created new database, saving doc');
         serverdb.put({_id: 'testitem'}, utils.cb(onDone, function(){
 
           var replicator = lib(serverdb, localdb, {}, mylog.wrap('init replicator'));

@@ -26,7 +26,7 @@
  describe('processor', function () {
   'use strict';
 
-  it('1: processor should call ', function (done) {
+  it('1: processor should call function and remove item from queue', function (done) {
    var mylog = masterLog.wrap('1');
    var onDone = function (error) {
     if (error) {
@@ -36,13 +36,23 @@
   };
 
   var changes = {test: 1};
+
   var queueProcessor = lib(function(id, data, log, callback){
     assert.equal('test', id);
-    callback();
+    callback(null, id, data);
   });
-  queueProcessor(changes, function(){}, mylog.wrap('processor'), function(error){
+
+  var itemProcessed = function(seq, payload){
+  };
+  queueProcessor(changes, itemProcessed , mylog.wrap('processor'), function(error){
+    if(error)
+    {
+      onDone(error);
+      return;
+    }
+
     assert.equal('undefined', typeof changes.test);
-    onDone(error);
+    onDone();  
   });
 });
 
@@ -62,6 +72,11 @@
     callback();
   });
   queueProcessor(changes, function(){}, mylog.wrap('processor'), function(error){
+    if(error)
+    {
+      onDone(error);
+      return;
+    }
     assert.equal('undefined', typeof changes.test);
     assert.equal('undefined', typeof changes.test2);
     assert.equal(2, count);
@@ -77,7 +92,7 @@
     }
     done(error);
   };
-  var changes = {test: 1, test2: 2};
+  var changes = {test: 1};
 
   var queueProcessor = lib(function(id, data, log, callback){
     callback(null, 1, 2, 3, 4, 5, 6);
@@ -85,18 +100,19 @@
 
   var total =0;
 
-  var itemProcessed = function(seq, a, b, c, d, e, f){
-    assert.equal(a, 1);
-    assert.equal(b, 2);
-    assert.equal(c, 3);
-    assert.equal(d, 4);
-    assert.equal(e, 5);
-    assert.equal(f, 6);
+  var itemProcessed = function(se, pay){
+    assert.equal(se, 'test');
+    assert.equal(pay, 1);
     total = total  +1;
   };
 
   queueProcessor(changes, itemProcessed, mylog.wrap('processor'), function(error){
-    assert.equal(2, total);
+    if(error)
+    {
+      onDone(error);
+      return;
+    }
+    assert.equal(1, total);
     onDone();
   });
 });

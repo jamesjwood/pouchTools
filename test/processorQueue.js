@@ -74,10 +74,10 @@ describe('processorQueue', function () {
     assert.ok(log);
     assert.ok(callback);
 
-    assert.equal('hello', queue[1].id);
-    var item =  queue[1];
-    delete queue[1];
-    itemProcessed(item.id, item);
+    assert.equal('hello', queue['1']);
+
+    itemProcessed('1', 'hello');
+    delete queue['1'];
     callback();
   };
 
@@ -89,13 +89,13 @@ describe('processorQueue', function () {
    mylog(message);
  });
 
-  var payload = {id: 'hello'};
-  queue.on('itemProcessed', function(seq, pay){
-     assert.equal('hello', seq);
-     assert.equal(payload, pay);
-     onDone();
+  var payload = 'hello';
 
+  queue.on('itemProcessed', function(seq, pay){
+     assert.equal('1', seq);
+     assert.equal('hello', pay);
+     onDone();
   });
-  queue.enqueue(1, payload);
+  queue.enqueue('1', payload);
 });
 });

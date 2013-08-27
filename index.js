@@ -6,6 +6,7 @@ module.exports.validateDoc = require('./src/validateDoc.js');
 module.exports.processor = require('./src/processor.js');
 module.exports.processorQueue = require('./src/processorQueue.js');
 module.exports.processorQueueStack = require('./src/processorQueueStack.js');
+module.exports.pouchManager= require('./src/pouchManager.js');
 
 
 if(typeof window ==='undefined')

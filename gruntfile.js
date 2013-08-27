@@ -26,7 +26,7 @@ module.exports = function(grunt) {
         ui: 'bdd',
         reporter: 'tap'
       },
-      all: { src: ['test/processor.js','test/processorQueue.js','test/processorQueueStack.js','test/designDoc.js','test/pouchService.js','test/replicator.js','test/offlinePouch.js'] }
+      all: { src: ['test/*.js'] }
     },
     shell: {
       makeStage: {

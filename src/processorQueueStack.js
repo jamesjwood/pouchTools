@@ -1,8 +1,10 @@
 var events = require('events');
 var utils = require('utils');
 var async = require('async');
+var assert = require('assert');
 
 module.exports = function(queues){
+	assert.ok(queues);
 	var that = new events.EventEmitter();
 	that.cancelled = false;
 
@@ -11,8 +13,8 @@ module.exports = function(queues){
 	that.offline = true;
 
 	var getQueF = function(i){
-		var f = function(seq, payload){
-			queues[i +1].enqueue(seq, payload);
+		var f = function(){
+			queues[i +1].enqueue.apply(null, arguments);
 		};
 		return f;
 	};
