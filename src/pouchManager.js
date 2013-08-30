@@ -20,9 +20,9 @@ that.services = {};
 
 that.newDatabase = function(name, url, opts, setupLog){
 	setupLog('creating database: '+ name);
-	var database = offlinePouch(name, url, opts, setupLog.wrap('databases: ' + name));
+	var database = offlinePouch(name, url, opts, setupLog);
 	that.databases[name] = database;
-	utils.log.emitterToLog(database, databasesLog.wrap(name));
+	//utils.log.emitterToLog(database, databasesLog.wrap(name));
 	that.emit('newDatabase', name, database);
 	return database;
 };
@@ -33,7 +33,7 @@ that.newService =  function(name, databaseName, queues, opts, setupLog){
 	assert.ok(that.databases[databaseName]);
 	assert.ok(setupLog);
 
-	var service = pouchService(name, that.databases[databaseName], that.databases.services, queues, opts, setupLog.wrap('services: ' + name));
+	var service = pouchService(name, that.databases[databaseName], that.databases.services, queues, opts, setupLog);
 	that.services[name] = service;
 	that.emit('newService', name, service);
 	service.on('error', function(){

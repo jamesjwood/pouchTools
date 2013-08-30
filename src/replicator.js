@@ -70,7 +70,7 @@ var getAwaitingDiffProcessor = function(filter, target){
       target.revsDiff(diff, utils.safe.catchSyncronousErrors(callback, function(error, diffs){
         if(error)
         {
-          logs('could not process awaiting diffs, possibly disconnected');
+          log('could not process awaiting diffs, possibly disconnected');
           callback(error);
           return;
         }

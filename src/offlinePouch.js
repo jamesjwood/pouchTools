@@ -60,26 +60,30 @@ module.exports = function(name, url, opts, log){
 	that.setupComplete = false;
 
 
-	var wrapActiveDBFunction = function(name){
-		that[name] = function(){
-			if(!that.setupComplete)
-			{
-				throw new Error('setup not complete');	
-			}
-			activeDB[name].apply(activeDB, arguments);
-		};
-	};
-	wrapActiveDBFunction('info');
-	wrapActiveDBFunction('put');
-	wrapActiveDBFunction('post');
-	wrapActiveDBFunction('get');
-	wrapActiveDBFunction('view');
+	var mapped = ['put', 'post', 'get', 'allDocs', 'changes', 'bulkDocs', 'info', 'view'];
 
-
-	var mapped = ['put', 'post', 'get', 'allDocs', 'changes', 'bulkDocs'];
 	mapped.map(function(name){
-		that[name] = function(){
-			activeDB[name].apply(this, arguments);
+		that[name] = function(){;
+
+			var myArgs = arguments;
+			if(typeof myArgs[myArgs.length-1] === 'function')
+			{
+				//async
+				if(!that.setupComplete)
+				{
+					that.on('setupComplete', function(){
+						utils.safe(myArgs[myArgs.length-1], function(){
+							activeDB[name].apply(activeDB, myArgs);
+						})();	
+					});	
+					return;
+				}
+				activeDB[name].apply(activeDB, myArgs);
+			}
+			else
+			{
+				activeDB[name].apply(activeDB, myArgs);
+			}	
 		};
 	});
 
@@ -125,9 +129,9 @@ module.exports = function(name, url, opts, log){
 	};
 	if(!module.exports.offlineSupported() || opts.serverOnly)
 	{
-		if (opts.startOffline)
+		if (opts.localOnly)
 		{
-			throw new Error('startOffline requested but offline is not supported');
+			throw new Error('localOnly requested but offline is not supported');
 		}
 		retries = 0;
 		log('no browser support for local data, returning serverdb');
@@ -199,7 +203,7 @@ module.exports = function(name, url, opts, log){
 	module.exports.getLocalDb(pouch, name, opts.wipeLocal, log.wrap('get local db'),utils.cb(setupComplete, function(ldb){
 		localDB = ldb;
 
-		if(opts.startOffline)
+		if(opts.localOnly)
 		{
 			log('local db only');
 			setActiveDB(localDB, 'local');
@@ -254,7 +258,7 @@ module.exports.getServerDb = function(pouchdb, url, retries, retryDelay, log, ca
 			if(error)
 			{
 				log('error getting pouch');
-				if(error.status === 400 || error.status === 0)
+				if(error.status === 400 || error.status === 404 ||error.status === 0)
 				{
 					//timeout or not availab
 					log('failed to get pouch');
