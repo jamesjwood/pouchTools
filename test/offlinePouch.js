@@ -167,7 +167,7 @@ describe('offlinePouch', function () {
     });
   });
 
-  it('5: if offline supported should create local db', function (done) {
+  it('5: if offline supported should create local db, should be able to delte it', function (done) {
     var log = masterLog.wrap('5');
     var onDone = function(error){
       if(error)
@@ -191,8 +191,9 @@ describe('offlinePouch', function () {
           offlinePouch.on('downUpToDate', function(){
             offlinePouch.get('testdoc', utils.cb(onDone, function(doc){
               assert.equal('testdoc', doc._id);
-              offlinePouch.close();
-              onDone();
+              offlinePouch.wipeLocal(utils.cb(onDone, function(){
+                onDone();
+              }));
             }));
           });
 
@@ -223,8 +224,9 @@ describe('offlinePouch', function () {
     var offlinePouch =lib('noServer', noServerURL,{retries: -1, retryDelay: 200, waitForInitialReplicate: false}, log.wrap('creating offline pouch'));
     offlinePouch.on('setupComplete', function(){
       offlinePouch.put({_id: 'testdoc2'}, utils.cb(onDone, function(){
-        offlinePouch.close();
-        onDone();
+              offlinePouch.wipeLocal(utils.cb(onDone, function(){
+                onDone();
+              }));
       }));
     });
 

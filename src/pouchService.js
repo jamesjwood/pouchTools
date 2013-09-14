@@ -132,7 +132,7 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
   };
 
   var initialReplicateComplete = function(seq){
-    log('initialReplicateComplete');
+    log('initialComplete');
     that.sEmit('initialReplicateComplete', seq);
   };
 

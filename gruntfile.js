@@ -10,7 +10,7 @@ module.exports = function(grunt) {
     watch: {
       options: {
         interrupt: true,
-      files: ['src/*.js', 'test/*.js'],
+      files: ['index.js', 'test.js', 'src/*.js', 'test/*.js'],
       tasks: ['test']
       }
     },
@@ -19,7 +19,7 @@ module.exports = function(grunt) {
         browser: true,
         node: true
       },
-      all: ['src/*.js', 'test/*.js']
+      all: ['index.js', 'test.js', 'src/*.js', 'test/*.js']
     },
     simplemocha: {
       options: {
@@ -44,7 +44,7 @@ module.exports = function(grunt) {
       }
       ,
       browserify:{
-        command: 'node ./node_modules/browserify/bin/cmd.js  -o ./stage/test.js -i domain -i loggly -i ga -i pouchdb -e ./test.js;',
+        command: 'node ./node_modules/browserify/bin/cmd.js  --debug -o ./stage/test.js -i domain -i loggly -i ga -i pouchdb -e ./test.js;',
         stdout: true,
         stderr: true,
         failOnError: true
@@ -140,8 +140,8 @@ grunt.loadNpmTasks('grunt-shell');
 grunt.loadNpmTasks('grunt-simple-mocha');
 grunt.loadNpmTasks('grunt-karma');
 
-grunt.registerTask('test', ['jshint', 'shell:makeStage', 'simplemocha', 'shell:browserify', 'karma:local']);
 grunt.registerTask('install', ['shell:makeLib', 'shell:browserifyValidator', 'shell:buildPouchDBClient', 'shell:copyPouch']);
-grunt.registerTask('default', ['shell:makeStage', 'shell:browserify']);
+grunt.registerTask('default', ['jshint', 'shell:makeStage', 'simplemocha']);
+grunt.registerTask('test', ['default', 'shell:browserify', 'karma:local']);
 
 };

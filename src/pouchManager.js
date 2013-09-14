@@ -22,7 +22,7 @@ that.newDatabase = function(name, url, opts, setupLog){
 	setupLog('creating database: '+ name);
 	var database = offlinePouch(name, url, opts, setupLog);
 	that.databases[name] = database;
-	//utils.log.emitterToLog(database, databasesLog.wrap(name));
+	utils.log.emitterToLog(database, databasesLog.wrap(name));
 	that.emit('newDatabase', name, database);
 	return database;
 };
@@ -30,7 +30,7 @@ that.newService =  function(name, databaseName, queues, opts, setupLog){
 	setupLog('creating service: '+ name);
 	assert.ok(name);
 	assert.ok(queues);
-	assert.ok(that.databases[databaseName]);
+	assert.ok(that.databases[databaseName], 'there was no database with the name: ' + databaseName);
 	assert.ok(setupLog);
 
 	var service = pouchService(name, that.databases[databaseName], that.databases.services, queues, opts, setupLog);
@@ -60,17 +60,26 @@ that.cancel = function(){
 	that.emit('cancelled');
 };
 
-that.reset = function(){
+that.wipeLocal = function(slog, cbk){
 	that.cancel();
-	that.databases = {};
-	that.services = {};
-	that.newDatabase('services', 'services', {localOnly: true}, log);
+
+	async.forEachSeries(Object.keys(that.databases), function(name, cb){
+		that.databases[name].wipeLocal(slog, cb);
+	}, utils.cb(cbk, function(){
+			that.databases = {};
+			that.services = {};
+			that.cancelled = false;
+			that.newDatabase('services', 'services', {localOnly: true}, log.wrap('newDatabase, services'));	
+			cbk();
+	}));
 };
+
+
 that.on('error', function(){
 	that.cancel();
 });
 
 
-that.newDatabase('services', 'services', {localOnly: true}, log);
+that.newDatabase('services', 'services', {localOnly: true}, log.wrap('newDatabase, services'));
 
 module.exports = that;

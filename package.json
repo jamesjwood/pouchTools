@@ -17,7 +17,8 @@
     "sinon": "1.7.2",
     "karma": "~0.8.5",
     "grunt-karma": "~0.4.4",
-    "nano": "3.4.0"
+    "nano": "3.4.0",
+    "browserify": "1.17.3"
   },
   "dependencies": {
     "pouchdb": "0.0.14",
@@ -27,8 +28,7 @@
     "grunt-simple-mocha": "0.4.0",
     "grunt": "0.4.1",
     "grunt-shell": "0.2.2",
-    "grunt-contrib": "0.7.0",
-    "browserify": "~1.17.3"
+    "grunt-contrib": "0.7.0"
   },
   "browser": {
     "REQUIRE_PATH": false

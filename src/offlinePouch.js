@@ -57,28 +57,32 @@ module.exports = function(name, url, opts, log){
 
 	var that = new events.EventEmitter();
 
+
+	var runLog = utils.log(that);
+
 	that.setupComplete = false;
 
 
-	var mapped = ['put', 'post', 'get', 'allDocs', 'changes', 'bulkDocs', 'info', 'view'];
+	var mapped = ['put', 'post', 'get', 'allDocs', 'changes', 'bulkDocs', 'info', 'view', 'query'];
 
 	mapped.map(function(name){
-		that[name] = function(){;
-
+		that[name] = function(){
 			var myArgs = arguments;
 			if(typeof myArgs[myArgs.length-1] === 'function')
 			{
 				//async
-				if(!that.setupComplete)
+				if(that.setupComplete)
 				{
-					that.on('setupComplete', function(){
-						utils.safe(myArgs[myArgs.length-1], function(){
-							activeDB[name].apply(activeDB, myArgs);
-						})();	
-					});	
+					activeDB[name].apply(activeDB, myArgs);
 					return;
 				}
-				activeDB[name].apply(activeDB, myArgs);
+				log('setup not yet complete, delaying ' + name);
+				that.on('setupComplete', function(){
+					log('setup complete, executing delayed: ' + name);
+					utils.safe(myArgs[myArgs.length-1], function(){
+						activeDB[name].apply(activeDB, myArgs);
+					})();	
+				});	
 			}
 			else
 			{
@@ -106,6 +110,17 @@ module.exports = function(name, url, opts, log){
 		that.removeAllListeners();
 	};
 
+	that.wipeLocal = function(slog, cbk){
+		slog('wipeLocal: ' + name);
+		that.close();
+		if(module.exports.offlineSupported() && !opts.serverOnly)
+		{
+			var localName =	module.exports.getLocalDBName(name);
+			pouch.destroy(localName, cbk);
+		}
+	};
+
+
 	var setupComplete = function(error){
 		if(error)
 		{
@@ -127,6 +142,7 @@ module.exports = function(name, url, opts, log){
 			that.emit('locationChanged', location);
 		}
 	};
+
 	if(!module.exports.offlineSupported() || opts.serverOnly)
 	{
 		if (opts.localOnly)
@@ -134,7 +150,7 @@ module.exports = function(name, url, opts, log){
 			throw new Error('localOnly requested but offline is not supported');
 		}
 		retries = 0;
-		log('no browser support for local data, returning serverdb');
+		log('no browser support for local data, or serverOnly specified,  returning serverdb');
 		module.exports.getServerDb(pouch, url, retries, retryDelay, log.wrap('getting serverdb'),  utils.cb(setupComplete, function(sdb){
 			log('got server db');
 			serverDB = sdb;
@@ -149,8 +165,6 @@ module.exports = function(name, url, opts, log){
 
 
 	
-
-	var runLog = utils.log(that);
 
 	var setReplicator = function(opOrDown, replicator){		
 		var replicatorLog = runLog.wrap(opOrDown + 'Replicator');
