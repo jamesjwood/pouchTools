@@ -36,8 +36,9 @@
   };
 
   var changes = {test: 1};
+  var state  = {cancelled: false};
 
-  var queueProcessor = lib(function(id, data, log, callback){
+  var queueProcessor = lib(function(id, data, state, log, callback){
     assert.equal('test', id);
     callback(null, id, data);
   });
@@ -65,9 +66,11 @@
     }
     done(error);
   };
+
+  var state  = {cancelled: false};
   var changes = {test: 1, test2: 2};
   var count = 0;
-  var queueProcessor = lib(function(id, data, log, callback){
+  var queueProcessor = lib(function(id, data, state, log, callback){
     count++;
     callback();
   });
@@ -94,7 +97,8 @@
   };
   var changes = {test: 1};
 
-  var queueProcessor = lib(function(id, data, log, callback){
+  var state  = {cancelled: false};
+  var queueProcessor = lib(function(id, data, state, log, callback){
     callback(null, 1, 2, 3, 4, 5, 6);
   });
 

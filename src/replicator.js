@@ -54,6 +54,7 @@ module.exports  = function (src, target, opts, initLog){
 
   var that = pouchService(repId, src, checkpointDb, [awaitingDiff, awaitingGet, awaitingSave], opts, initLog.wrap('changeService'));
 
+
   return that;
 };
 
@@ -77,7 +78,7 @@ var getAwaitingDiffProcessor = function(filter, target){
           diff[change.id] = [];
           return;
         }
-        diff[change.id] = change.changes.map(function(x) { return x.rev; });
+        diff[change.id] = change.changes.map(function(x) { return x.rev;});
       });
       log('getting diffs from target');
       target.revsDiff(diff, utils.safe.catchSyncronousErrors(callback, function(error, diffs){
@@ -93,7 +94,7 @@ var getAwaitingDiffProcessor = function(filter, target){
 
             var payload = {};
             payload.change = change;
-            if(id  ==='task_4fd4dbb6-d5a5-4983-bb71-0bfb9f9e8468')
+            if(id  ==='task_3c52ff6d-c822-472e-9aa4-9406fd8e8538')
             {
               log('diffs for id: ' + id);
               log.dir(diffs[id]);
@@ -120,11 +121,12 @@ var getAwaitingDiffProcessor = function(filter, target){
 
 
 var getAwaitingGetProcessor =  function(src){
-  var that = processor(function(seq, payload, logs, callback){
+  var that = processor(function(seq, payload, state, logs, callback){
     assert.ok(seq);
     assert.ok(payload);
     assert.ok(logs);
     assert.ok(callback);
+
 
     var foundRevs = [];
     var missing = payload.missing;
@@ -159,12 +161,13 @@ var getAwaitingGetProcessor =  function(src){
 };
 
 var getAwaitingSaveProcessor = function(target){
-  var p = processor(function(seq, payload, logs, callback){
+  var p = processor(function(seq, payload, state, logs, callback){
     var change = payload.change;
     var revs = payload.revs;
     async.forEachSeries(revs, function(rev, cbk){
       assert.ok(rev);
       logs('saving rev' + rev._rev);
+
       target.bulkDocs({docs: [rev]}, {new_edits: false}, utils.safe.catchSyncronousErrors(cbk, function(error, response){
         if(error)
         {

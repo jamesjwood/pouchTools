@@ -5,6 +5,8 @@ var async = require('async');
 var assert = require('assert');
 
 module.exports = function(processItem){
+
+  var state = {cancelled: false};
   var that = function(queue, itemProcessed, log, callback){
     assert.ok(queue);
     assert.ok(itemProcessed);
@@ -12,8 +14,17 @@ module.exports = function(processItem){
     assert.ok(callback);
     async.forEachSeries(Object.keys(queue), function(seq, cbk){
       assert.ok(seq);
+      if(that.cancelled)
+      {
+        return;
+      }
+
       log('item: ' + seq);
       var onDone = function(error, payload){
+        if(that.cancelled)
+        {
+          return;
+        }
         if(error)
         {
           log('error processing seq: ' + seq);
@@ -26,8 +37,13 @@ module.exports = function(processItem){
         cbk();
       };
       var item = queue[seq];
-      utils.safe(onDone, processItem)(seq, item, log.wrap('seq: ' + seq), onDone);
+      utils.safe(onDone, processItem)(seq, item, state, log.wrap('seq: ' + seq), onDone);
     }, callback);
+  };
+  that.cancelled = false;
+  that.cancel = function(){
+    that.cancelled = true;
+    state.cancelled = true;
   };
   return that;
 };

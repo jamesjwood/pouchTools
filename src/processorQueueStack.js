@@ -18,11 +18,15 @@ module.exports = function(queues){
 		};
 		return f;
 	};
+	var ef = function(error){
+		log.error(error);
+	};
 
 	for(var i = 0; i < queues.length -1; i ++)
 	{
 		var f = getQueF(i);
 		queues[i].on('itemProcessed', f);
+		queues[i].on('error', ef);
 	}
 
 	var updateOffline = function(){

@@ -9,7 +9,7 @@ var assert = require('assert');
 
 
 var getAwaitingNotifyProcessor = function(writeCheckpoint, target_at_seq, checkpointDB, id, hideCheckpoints){
-  var p = processor(function(seq, payload, mlog, callback){
+  var p = processor(function(seq, payload, state, mlog, callback){
     mlog('Notify processor, start at:' + target_at_seq + ' seq is ' + seq);
     if(target_at_seq <= seq)
     {

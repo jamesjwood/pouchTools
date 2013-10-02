@@ -1,13 +1,13 @@
 var async = require('async');
- var assert = require('assert');
- var utils = require('utils');
+var assert = require('assert');
+var utils = require('utils');
 
- var masterLog = utils.log().wrap('pouchService');
+var masterLog = utils.log().wrap('pouchService');
 
- var processor = require('./../src/processor.js');
- var processorQueue = require('./../src/processorQueue.js');
+var processor = require('./../src/processor.js');
+var processorQueue = require('./../src/processorQueue.js');
 
- var lib = require('./../src/pouchService.js');
+var lib = require('./../src/pouchService.js');
 
 var jsonCrypto = require('jsonCrypto');
 
@@ -20,14 +20,14 @@ var pouch;
 if(typeof window != 'undefined')
 {
 
- localDbUrl ='';
-  pouch= Pouch;
+	localDbUrl ='';
+	pouch= Pouch;
 
 }
 else
 {
-  pouch = require('pouchdb');
-  localDbUrl = 'leveldb://stage/';
+	pouch = require('pouchdb');
+	localDbUrl = 'leveldb://stage/';
 }
 
 
@@ -35,24 +35,24 @@ else
 var rootKeyBufferPair = jsonCrypto.generateKeyPEMBufferPair(MODULUS, EXPONENT);
 var rootCert = jsonCrypto.createCert('root', rootKeyBufferPair.publicPEM);
 
- describe('pouchService', function () {
+describe('pouchService', function () {
 
 	var cleanDB = function(done){
 		masterLog('cleaning');
-	    async.forEachSeries(['1'], function(name, cbk){
-	      pouch.destroy(localDbUrl + 'test_pouchService_' + name, function(error, body){
-	       cbk();
-	      });
-	    }, function(){
+		async.forEachSeries(['1'], function(name, cbk){
+			pouch.destroy(localDbUrl + 'test_pouchService_' + name, function(error, body){
+				cbk();
+			});
+		}, function(){
 			masterLog('cleaned');
 			done();
-	    });
-	  };
+		});
+	};
 
 	before(function(done){
-	    cleanDB(function(){
-	      done();
-	    });
+		cleanDB(function(){
+			done();
+		});
 	});
 
 	it('1: should process changes', function (done) {
@@ -70,7 +70,7 @@ var rootCert = jsonCrypto.createCert('root', rootKeyBufferPair.publicPEM);
 		var checkpoint = 0;
 
 
-		var queue = processorQueue(processor(function(seq, payload, mlog, callback){
+		var queue = processorQueue(processor(function(seq, payload, state, mlog, callback){
 			mlog('processor called');
 			callback(null, payload);
 		}));

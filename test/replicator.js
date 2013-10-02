@@ -6,31 +6,31 @@
  * To change this template use File | Settings | File Templates.
  */
 
-/*jslint node: true */
-/*global describe */
-/*global it */
-/*global before */
-/*global after */
+ /*jslint node: true */
+ /*global describe */
+ /*global it */
+ /*global before */
+ /*global after */
 
 
 
-var assert = require('assert');
-var utils = require('utils');
-var events = require('events');
+ var assert = require('assert');
+ var utils = require('utils');
+ var events = require('events');
 
-var masterLog = utils.log().wrap('replicator');
+ var masterLog = utils.log().wrap('replicator');
 
-var lib = require('../src/replicator.js');
+ var lib = require('../src/replicator.js');
 
-var async = require('async');
+ var async = require('async');
 
-var remoteDbUrl = 'http://admin:password@localhost:5984/';
+ var remoteDbUrl = 'http://admin:password@localhost:5984/';
 
-var localDbUrl;
+ var localDbUrl;
 
-var dbName = 'system';
+ var dbName = 'system';
 
-describe('pouchManager.replicator', function () {
+ describe('pouchManager.replicator', function () {
   'use strict';
 
   var pouch;
@@ -65,8 +65,6 @@ describe('pouchManager.replicator', function () {
   after(function(done){
     cleanDB(done);
   });
-
-
 
 
 it('1: replicate, should fire initialReplicate', function (done) {
@@ -165,8 +163,6 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
           replicator.on('error', function(error){
             onDone(error);
           });
-
-        
           replicator.on('initialReplicateComplete', function(change){
             mylog('checking doc is synced');
             localdb.get('testitem', {}, utils.safe(onDone, function(err3, item){
@@ -182,7 +178,7 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
 }));
 });
 
-
+/*
 it('4: replicate, should be continuous', function (done) {
  var mylog = masterLog.wrap('4');
  var onDone = function (err) {
@@ -220,7 +216,6 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
             replicator.cancel();
             mylog('checking doc is synced');
             localdb.get('testitem', {}, utils.safe(onDone, function(err3, item){
-              console.dir(err3);
               assert.ifError(err3);
               assert.equal('testitem', item._id);
               onDone();
@@ -234,5 +229,54 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
   }));
 }));
 });
+
+it('5: replicate, should be deal with deletes', function (done) {
+ var mylog = masterLog.wrap('5');
+ var onDone = function (err) {
+  if (typeof err !== 'undefined') {
+    mylog.error(err);
+  }
+  done(err);
+};
+
+var dbName = localDbUrl + 'test_replicator_7';
+var remoteDbName = remoteDbUrl + 'test_replicator_7';
+mylog('creating new database: ' + remoteDbName);
+pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
+  pouch(remoteDbName, utils.cb(onDone, function (serverdb) {
+    mylog('database created');
+    mylog('creating new database: ' + dbName);
+    pouch.destroy(dbName, utils.safe(onDone, function (error) {
+      pouch(dbName, utils.cb(onDone, function (localdb) {
+        var count =0;
+
+        var replicator = lib(serverdb, localdb, {continuous: true}, mylog.wrap('init replicator'));
+        utils.log.emitterToLog(replicator, mylog.wrap('replicator'));
+        replicator.on('error', function(error){
+          onDone(error);
+        });
+
+        replicator.on('upToDate', function(seq){
+          if(seq ==1)
+          {
+            onDone();
+          }
+        });
+
+        serverdb.put({_id: 'testitem'}, utils.cb(onDone, function(){
+          mylog('doc written');
+          serverdb.get('testitem', utils.cb(onDone, function(updated){
+            updated._deleted = true;
+            serverdb.put(updated, utils.cb(onDone, function(){
+              mylog('doc deleted');
+            }));
+          }));
+          }));
+        }));
+      }));
+    }));
+  }));
+});
+*/
 });
 

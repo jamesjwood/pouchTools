@@ -36,7 +36,7 @@ describe('processorQueueStack', function () {
 		};
 
 
-		var nothingF = function(seq, payload, log, callback){
+		var nothingF = function(seq, payload, state, log, callback){
 			log('run');
 			var newPayload = JSON.parse(JSON.stringify(payload));
 			newPayload.count = newPayload.count +1;
@@ -46,7 +46,7 @@ describe('processorQueueStack', function () {
 		var queue1 = queue(processor(nothingF));
 		var queue2 = queue(processor(nothingF));
 		var queue3 = queue(processor(nothingF));
-		var queue4 = queue(processor(function(seq, payload, log, callback){
+		var queue4 = queue(processor(function(seq, payload, state, log, callback){
 			log('run');
 			assert.ok(payload);
 			assert.equal(payload.count, 4);

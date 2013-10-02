@@ -16,6 +16,7 @@ module.exports =function(processor, retryInterval){
   that.cancelled = false;
   that.cancel = function(){
     that.cancelled = true;
+    processor.cancel();
     that.emit('cancelled');
     that.removeAllListeners();
   };
@@ -57,8 +58,8 @@ module.exports =function(processor, retryInterval){
         if(typeof error.critical === 'undefined' || error.critical === null || error.critical === true)
         {
           setOffline(true);
-          log('error processing queue');
-          that.emit('error', error);
+          log('error processing queue: '+ error.message);
+          log.error(error);
           that.cancel();
           return;
         }
