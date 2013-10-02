@@ -1,31 +1,34 @@
 var jsonCrypto = require('jsonCrypto');
 var utils = require('utils');
 
-module.exports = function(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts){
+module.exports = function(newDoc, oldDoc, userCtx, typeSpecs){
 	var log = utils.log();
 	if(!typeSpecs)
 	{
 		throw({forbidden: 'no typeSpecs supplied'});
 	}
-	if(!trustedCerts)
-	{
-		throw({forbidden: 'no trustedCerts supplied'});
-	}
-
-
-
 
 
 	var validateSignature = function(doc){
 		module.exports.requireOn(newDoc, 'signature');
-		if (jsonCrypto.verifyObject(doc, trustedCerts, log) !== 1)
+		try
 		{
-			throw ({forbidden: 'the signature is not valid'});
+			if (jsonCrypto.verifyObject(doc, log) === 0)
+			{
+				throw ({forbidden: 'the signature is not valid'});
+			}
 		}
+		catch (error)
+		{
+			throw({forbidden: 'the signature is not valid', error: error});
+		}
+		
 	};
 	validateSignature(newDoc);
 
-	var newSigner = jsonCrypto.getTrustedCert(newDoc.signature.signer,trustedCerts) || newDoc.signature.signer;
+	var docSize = JSON.stringify(newDoc).length;
+
+	var newSigner = newDoc.signature.signer;
 
 		//check the type is allowed
 		module.exports.requireOn(newDoc, 'type');
@@ -43,6 +46,12 @@ module.exports = function(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts){
 		}
 
 		specs.map(function(spec){
+			console.log('checking size: ' + docSize + ' against ' + spec.maximumSize);
+			if(spec.maximumSize !== null && spec.maximumSize < docSize)
+			{
+				throw({forbidden: 'the maxium doc size for ' + spec.type + ' is ' + spec.maximumSize});
+			}
+
 			module.exports.requireOn(spec, 'editors');
 			module.exports.requireOn(spec, 'contributors');
 
@@ -56,31 +65,29 @@ module.exports = function(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts){
 				});
 				return inRole;
 			};
-			var isEditor = checkRoles(newSigner.name, spec.editors);
-			var isContributor = checkRoles(newSigner.name, spec.contributors);
+			var isEditor = checkRoles(newSigner.id, spec.editors);
+			var isContributor = checkRoles(newSigner.id, spec.contributors);
 			if(!oldDoc)
 			{
 				//insert
 				module.exports.requireOn(newDoc, 'creator');
-				if(newDoc.creator !== newSigner.name)
+				if(newDoc.creator !== newSigner.id)
 				{
 					throw({forbidden: 'the creator must be equal to the certificate name'});
 				}
 				if(!isEditor && !isContributor)
 				{
-					throw({forbidden: 'the user ' + newSigner.name + ' is not an editor or contributor'});
+					throw({forbidden: 'the user ' + newSigner.id + ' is not an editor or contributor'});
 				}
 			}
 			else
 			{
 				//update
 				module.exports.requireOn(newDoc, 'editor');
-				if(newDoc.editor !== newSigner.name)
+				if(newDoc.editor !== newSigner.id)
 				{
 					throw({forbidden: 'the editor must be equal to the certificate name'});
 				}
-
-				var oldSigner = jsonCrypto.getTrustedCert(oldDoc.signature.signer,trustedCerts) || oldDoc.signature.signer;
 
 				module.exports.unchanged(newDoc, oldDoc, 'creator');
 
@@ -90,12 +97,12 @@ module.exports = function(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts){
 					{
 						if(newDoc.editor !== oldDoc.creator)
 						{
-							throw({forbidden: 'the user ' + newSigner.name + ' can only update their own records'});
+							throw({forbidden: 'the user ' + newSigner.id + ' can only update their own records'});
 						}
 					}
 					else
 					{
-						throw({forbidden: 'the user ' + newSigner.name + ' is not an editor or contributor'});
+						throw({forbidden: 'the user ' + newSigner.id + ' is not an editor or contributor'});
 					}
 				}
 			}

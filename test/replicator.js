@@ -48,7 +48,6 @@ describe('pouchManager.replicator', function () {
   var cleanDB = function(done){
 
     async.forEachSeries(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], function(name, cbk){
-
       pouch.destroy(remoteDbUrl + '/test_replicator_' + name, function(error, body){
         cbk();
       });
@@ -138,7 +137,6 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
   }));
 }));
 });
-
 
 it('3: replicate, should replicate an item', function (done) {
  var mylog = masterLog.wrap('3');

@@ -15,13 +15,16 @@ var path = require('path');
 
 
 
-module.exports = function(fqPathToValidationModule, realtivePath, typeSpecs, trustedCerts, log, callback){
+module.exports = function(typeSpecs, log, callback){
 	assert.ok(typeSpecs);
-	assert.ok(trustedCerts);
+	assert.ok(log);
+	assert.ok(callback);
 
 	var b = browserify();
 	b.ignore('domain');
-	b.require(fqPathToValidationModule);
+	b.require(__dirname + '/validateDoc.js');
+
+	var realtivePath =  '/src/validateDoc.js';
 
 	var validateDocBuff = b.bundle({});
 	assert.ok(validateDocBuff);
@@ -31,9 +34,8 @@ module.exports = function(fqPathToValidationModule, realtivePath, typeSpecs, tru
 			{
 				var DOC_CODE;
 				var typeSpecs=TYPE_SPECS;
-				var trustedCerts=TRUSTED_CERTS;
 				var validator = require('REQUIRE_PATH');
-				return validator(newDoc, oldDoc, userCtx, typeSpecs, trustedCerts);
+				return validator(newDoc, oldDoc, userCtx, typeSpecs);
 			}
 			catch(error)
 			{
@@ -51,12 +53,10 @@ module.exports = function(fqPathToValidationModule, realtivePath, typeSpecs, tru
 		var validateDoc = wrapper.replace('var DOC_CODE;', validateDocBuff.toString('utf8'));
 		validateDoc = validateDoc.replace('REQUIRE_PATH', realtivePath);
 		validateDoc = validateDoc.replace('TYPE_SPECS', JSON.stringify(typeSpecs));
-		validateDoc = validateDoc.replace('TRUSTED_CERTS', JSON.stringify(trustedCerts));
 
 		var designDoc = {
 			_id: "_design/master",
 			validate_doc_update: validateDoc,
-			trustedCerts:trustedCerts,
 			typeSpecs:typeSpecs
 		};
 

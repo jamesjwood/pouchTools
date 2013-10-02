@@ -63,7 +63,7 @@ module.exports = function(name, url, opts, log){
 	that.setupComplete = false;
 
 
-	var mapped = ['put', 'post', 'get', 'allDocs', 'changes', 'bulkDocs', 'info', 'view', 'query'];
+	var mapped = ['put', 'post', 'get', 'allDocs', 'changes', 'bulkDocs', 'info', 'view', 'query', 'remove'];
 
 	mapped.map(function(name){
 		that[name] = function(){
@@ -111,7 +111,7 @@ module.exports = function(name, url, opts, log){
 	};
 
 	that.wipeLocal = function(slog, cbk){
-		slog('wipeLocal: ' + name);
+		slog('wipeLocal');
 		that.close();
 		if(module.exports.offlineSupported() && !opts.serverOnly)
 		{
@@ -199,9 +199,17 @@ module.exports = function(name, url, opts, log){
 			{
 				cbk();					
 			}
-			var upReplicator = replicator(localDB, serverDB, {filter: filter, continuous: true}, rlog.wrap('init up replicator'));
+
+			var repOpts = {filter: filter, continuous: true};
+			if(opts.checkpointDb)
+			{
+				repOpts.checkpointDb = opts.checkpointDb;
+			} 
+			repOpts.reset = true;
+
+			var upReplicator = replicator(localDB, serverDB, repOpts, rlog.wrap('init up replicator'));
 			setReplicator('up', upReplicator);
-			var downReplicator = replicator(serverDB, localDB, {filter: filter, continuous: true}, rlog.wrap('init down replicator'));
+			var downReplicator = replicator(serverDB, localDB, repOpts, rlog.wrap('init down replicator'));
 			setReplicator('down', downReplicator);
 
 			downReplicator.on('initialReplicateComplete',  function(){

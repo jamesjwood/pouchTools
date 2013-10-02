@@ -1,4 +1,4 @@
-
+var async = require('async');
  var assert = require('assert');
  var utils = require('utils');
 
@@ -12,45 +12,49 @@
 var jsonCrypto = require('jsonCrypto');
 
 
+var localDbUrl;
 var EXPONENT = 65537;
 var MODULUS = 512;
 var pouch;
+
 if(typeof window != 'undefined')
 {
+
+ localDbUrl ='';
   pouch= Pouch;
 
 }
 else
 {
   pouch = require('pouchdb');
+  localDbUrl = 'leveldb://stage/';
 }
 
- var async = require('async');
 
 
 var rootKeyBufferPair = jsonCrypto.generateKeyPEMBufferPair(MODULUS, EXPONENT);
 var rootCert = jsonCrypto.createCert('root', rootKeyBufferPair.publicPEM);
 
  describe('pouchService', function () {
+
 	var cleanDB = function(done){
+		masterLog('cleaning');
+	    async.forEachSeries(['1'], function(name, cbk){
+	      pouch.destroy(localDbUrl + 'test_pouchService_' + name, function(error, body){
+	       cbk();
+	      });
+	    }, function(){
+			masterLog('cleaned');
+			done();
+	    });
+	  };
 
-    async.forEachSeries(['1'], function(name, cbk){
-      pouch.destroy('stage/testService' + name, function(error, body){
-       cbk();
-      });
-    }, function(){
-		done();
-    });
-  };
+	before(function(done){
+	    cleanDB(function(){
+	      done();
+	    });
+	});
 
-  before(function(done){
-    cleanDB(function(){
-      done();
-    });
-  });
-  after(function(done){
-    cleanDB(done);
-  });
 	it('1: should process changes', function (done) {
 		var testNumber = 1;
 		var log = masterLog.wrap(testNumber);
@@ -71,8 +75,10 @@ var rootCert = jsonCrypto.createCert('root', rootKeyBufferPair.publicPEM);
 			callback(null, payload);
 		}));
 
-		pouch('stage/testService' + testNumber, utils.cb(onDone, function(db){
-			var myService = lib('myservice', db, db, [queue], {continuous: true},  log.wrap('changeServiceInit'));
+		var dbName = localDbUrl + 'test_pouchService_1';
+
+		pouch(dbName, utils.cb(onDone, function(db){
+			var myService = lib('test_pouchService', db, db, [queue], {continuous: true},  log.wrap('changeServiceInit'));
 			utils.log.emitterToLog(myService, log.wrap('service'));
 
 			myService.on('setupComplete', utils.cb(onDone, function(){
@@ -96,6 +102,7 @@ var rootCert = jsonCrypto.createCert('root', rootKeyBufferPair.publicPEM);
 			myService.on('changeDone', utils.safe.catchSyncronousErrors(onDone, function(seq){
 				assert.ok(seq);
 				assert.equal(seq, 1);
+				myService.cancel();
 				onDone();
 			}));
 		}));

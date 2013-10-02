@@ -27,7 +27,7 @@ var genReplicationId = function(src, target, filter, log) {
     throw new Error('the source or target ids cannot be null');
   }
   var hashBuff = jsonCrypto.hashBuffer(new Buff(src.id() + target.id() + filterFun, 'utf8'), 'md5');
-  return hashBuff.toString('hex');
+  return src.id() + "-" +  target.id() + hashBuff.toString('hex');
 };
 
 
@@ -39,7 +39,20 @@ module.exports  = function (src, target, opts, initLog){
   var awaitingGet = processorQueue(getAwaitingGetProcessor(src));
   var awaitingSave = processorQueue(getAwaitingSaveProcessor(target));
 
-  var that = pouchService(repId, src, target, [awaitingDiff, awaitingGet, awaitingSave], opts, initLog.wrap('changeService'));
+
+  if(opts.checkpointDb)
+  {
+    initLog('showing checkpoints');
+    opts.hideCheckpoints = false;
+  }
+  else
+  {
+    initLog('hiding checkpoints');
+    opts.hideCheckpoints = true;
+  }
+  var checkpointDb = opts.checkpointDb || target;
+
+  var that = pouchService(repId, src, checkpointDb, [awaitingDiff, awaitingGet, awaitingSave], opts, initLog.wrap('changeService'));
 
   return that;
 };
@@ -66,7 +79,7 @@ var getAwaitingDiffProcessor = function(filter, target){
         }
         diff[change.id] = change.changes.map(function(x) { return x.rev; });
       });
-
+      log('getting diffs from target');
       target.revsDiff(diff, utils.safe.catchSyncronousErrors(callback, function(error, diffs){
         if(error)
         {
@@ -80,6 +93,13 @@ var getAwaitingDiffProcessor = function(filter, target){
 
             var payload = {};
             payload.change = change;
+            if(id  ==='task_4fd4dbb6-d5a5-4983-bb71-0bfb9f9e8468')
+            {
+              log('diffs for id: ' + id);
+              log.dir(diffs[id]);
+              log('given');
+              log.dir(diff);
+            }
 
             if(diffs[id] && diffs[id].missing)
             {
@@ -148,24 +168,29 @@ var getAwaitingSaveProcessor = function(target){
       target.bulkDocs({docs: [rev]}, {new_edits: false}, utils.safe.catchSyncronousErrors(cbk, function(error, response){
         if(error)
         {
-          logs('Possible problem saving diff: ' + rev._rev);
-          if(error.status !==500)
-          {
+          //logs('Possible problem saving seq: ' + seq + ' id: ' + rev._id);
+          //if(error.status ==500)
+          //{
+            logs('error on bulk doc for document: ');
+            logs.dir(rev);
             logs.error(error, 'saving rev');
             cbk(error);
             return;
-          }
-          else
-          {
+          //}
+          //else
+          //{
+           // logs('duplicate rev');
+           // logs.dir(error);
             //there is a duplicate record already, that is ok
-          }
+          //}
         }
         else if(response.length > 0)
         {
             var revResponse = response[0];
             if(revResponse.error)
             {
-              var e = new Error('bulkDocs error: ' + revResponse.error + ', ' + revResponse.reason + ' for rev: ' + revResponse.rev + ' id: ' + revResponse.id);
+              logs('Error saving rev');
+              var e = new Error('bulkDocs error: ' + revResponse.error + ', ' + revResponse.reason + ' for id: ' + rev._id);
               logs.error(e, 'bulkDocs error');
               cbk(e);
               return;

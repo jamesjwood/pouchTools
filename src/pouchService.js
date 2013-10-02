@@ -8,13 +8,13 @@ var async = require('async');
 var assert = require('assert');
 
 
-var getAwaitingNotifyProcessor = function(writeCheckpoint, target_at_seq, checkpointDB, id){
+var getAwaitingNotifyProcessor = function(writeCheckpoint, target_at_seq, checkpointDB, id, hideCheckpoints){
   var p = processor(function(seq, payload, mlog, callback){
     mlog('Notify processor, start at:' + target_at_seq + ' seq is ' + seq);
     if(target_at_seq <= seq)
     {
-      mlog('writing checkpoint at: ' + seq);
-      writeCheckpoint(checkpointDB, id, seq, mlog.wrap('writeCheckpoint'), utils.cb(callback, function(){
+      mlog('writing checkpoint at: ' + seq + ' hidden=' + hideCheckpoints);
+      writeCheckpoint(checkpointDB, id, seq, hideCheckpoints, mlog.wrap('writeCheckpoint'), utils.cb(callback, function(){
         callback();
       }));
       return;
@@ -24,7 +24,7 @@ var getAwaitingNotifyProcessor = function(writeCheckpoint, target_at_seq, checkp
   return p;
 };
 
-var setupQueues = function(queues, that, checkpointDB, id, log){
+var setupQueues = function(queues, that, checkpointDB, id, hideCheckpoints, log){
   assert.ok(queues);
   assert.ok(that);
   assert.ok(checkpointDB);
@@ -35,7 +35,7 @@ var setupQueues = function(queues, that, checkpointDB, id, log){
   {
     throw new Error('you must pass a non zero length queues variable');
   }
-  var notifyQueue = processorQueue(getAwaitingNotifyProcessor(writeCheckpoint, that.target_at_seq, checkpointDB, id));
+  var notifyQueue = processorQueue(getAwaitingNotifyProcessor(writeCheckpoint, that.target_at_seq, checkpointDB, id, hideCheckpoints));
 
 
   notifyQueue.on('itemProcessed', function(seq){
@@ -57,11 +57,19 @@ var setupQueues = function(queues, that, checkpointDB, id, log){
   });
 };
 
-var fetchCheckpoint = function(checkpointDB, id, log, callback) {
+var fetchCheckpoint = function(checkpointDB, id, hideCheckpoints, log, callback) {
     log('getting checkpoint');
-    checkpointDB.get('_local/' + id, function(err, doc) {
+
+    var cid = id;
+    if(hideCheckpoints)
+    {
+      cid = '_local/' + cid;
+    }
+
+
+    checkpointDB.get(cid, function(err, doc) {
       if (err && err.status === 404) {
-        log('could not get checkpoint with id: ' + id);
+        log('could not get checkpoint with id: ' + cid);
         callback(null, 0);
       } else {
         log('got checkpoint at:' + doc.last_seq);
@@ -70,11 +78,18 @@ var fetchCheckpoint = function(checkpointDB, id, log, callback) {
     });
   };
 
-var writeCheckpoint = function(checkpointDB, id, seq, log, callback) {
+var writeCheckpoint = function(checkpointDB, id, seq, hideCheckpoints, log, callback) {
+    assert.ok(checkpointDB, 'must have a checkpointdb');
+    assert.ok(id, 'must have a id');
+    assert.ok(seq, 'must have a seq');
     var check = {
-      _id: '_local/' + id,
+      _id: id,
       last_seq: seq
     };
+    if(hideCheckpoints)
+    {
+      check._id = '_local/' + check._id;
+    }
     log('checking for existing checkpoint: ' + seq);
     checkpointDB.get(check._id, function(err, doc) {
       if (doc && doc._rev) {
@@ -110,6 +125,11 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
   opts.filter = opts.filter || null;
   opts.reset = opts.reset || false;
   opts.continuous = opts.continuous || false;
+  if(opts.hideCheckpoints === null)
+  {
+    opts.hideCheckpoints =  false;
+  }
+  
 
   var that = new events.EventEmitter();
 
@@ -191,7 +211,7 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
       that.source_seq = info.update_seq;
       log('sourceDB at ' + that.source_seq);
       log('gettting checkpoint');
-      fetchCheckpoint(checkpointDB, id, log.wrap('getting checkpoint'), utils.cb(setupComplete, function(checkpoint) {
+      fetchCheckpoint(checkpointDB, id, opts.hideCheckpoints, log.wrap('getting checkpoint'), utils.cb(setupComplete, function(checkpoint) {
         if(that.cancelled)
         {
           return;
@@ -203,7 +223,7 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
         that.target_at_seq = checkpoint;
         log('targetDB at ' + that.target_at_seq);
 
-        setupQueues(queues, that,checkpointDB, id, initLog.wrap('setupQueues'));
+        setupQueues(queues, that,checkpointDB, id, opts.hideCheckpoints, initLog.wrap('setupQueues'));
 
 
 

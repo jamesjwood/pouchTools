@@ -15,10 +15,11 @@
   "license": "BSD",
   "devDependencies": {
     "sinon": "1.7.2",
-    "karma": "~0.8.5",
-    "grunt-karma": "~0.4.4",
+    "karma": "x",
+    "grunt-karma": "x",
     "nano": "3.4.0",
-    "browserify": "1.17.3"
+    "browserify": "1.17.3",
+    "karma-safari-launcher": "~0.1.1"
   },
   "dependencies": {
     "pouchdb": "0.0.14",

@@ -80,7 +80,7 @@ module.exports = function(grunt) {
       local: {
         configFile: 'karma.conf.js',
         singleRun: true,
-        browsers: ['Chrome'] //, 'Firefox', 'Safari', 'Opera'
+        browsers: ['Safari'] //, 'Firefox', 'Safari', 'Opera'
       },
       jenkins:
       {
@@ -142,6 +142,6 @@ grunt.loadNpmTasks('grunt-karma');
 
 grunt.registerTask('install', ['shell:makeLib', 'shell:browserifyValidator', 'shell:buildPouchDBClient', 'shell:copyPouch']);
 grunt.registerTask('default', ['jshint', 'shell:makeStage', 'simplemocha']);
-grunt.registerTask('test', ['default', 'shell:browserify', 'karma:local']);
+grunt.registerTask('test', ['shell:browserify', 'karma:local']);
 
 };

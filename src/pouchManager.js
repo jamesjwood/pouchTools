@@ -20,6 +20,9 @@ that.services = {};
 
 that.newDatabase = function(name, url, opts, setupLog){
 	setupLog('creating database: '+ name);
+	
+	opts = opts || {};
+	opts.checkpointDb = that.databases.services;
 	var database = offlinePouch(name, url, opts, setupLog);
 	that.databases[name] = database;
 	utils.log.emitterToLog(database, databasesLog.wrap(name));
@@ -32,6 +35,8 @@ that.newService =  function(name, databaseName, queues, opts, setupLog){
 	assert.ok(queues);
 	assert.ok(that.databases[databaseName], 'there was no database with the name: ' + databaseName);
 	assert.ok(setupLog);
+	opts = opts || {};
+	opts.hideCheckpoints = false;
 
 	var service = pouchService(name, that.databases[databaseName], that.databases.services, queues, opts, setupLog);
 	that.services[name] = service;

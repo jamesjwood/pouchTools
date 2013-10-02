@@ -26,7 +26,7 @@ module.exports = function(processItem){
         cbk();
       };
       var item = queue[seq];
-      utils.safe(onDone, processItem)(seq, item, log, onDone);
+      utils.safe(onDone, processItem)(seq, item, log.wrap('seq: ' + seq), onDone);
     }, callback);
   };
   return that;
