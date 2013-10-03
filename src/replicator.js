@@ -62,59 +62,59 @@ module.exports  = function (src, target, opts, initLog){
 //the processors
 var getAwaitingDiffProcessor = function(filter, target){
   var that = function(queue, itemProcessed, log, callback){
-      assert.ok(queue);
-      assert.ok(itemProcessed);
-      assert.ok(log);
-      assert.ok(callback);
+    assert.ok(queue);
+    assert.ok(itemProcessed);
+    assert.ok(log);
+    assert.ok(callback);
 
-      var diff = {};
-      var processing = {};
+    var diff = {};
+    var processing = {};
 
-      Object.keys(queue).map(function(seq){
+    Object.keys(queue).map(function(seq){
+      var change = queue[seq];
+      processing[seq] = change;
+      if(typeof filter !== 'undefined' && filter && !filter(change.doc))
+      {
+        diff[change.id] = [];
+        return;
+      }
+      diff[change.id] = change.changes.map(function(x) { return x.rev;});
+    });
+    log('getting diffs from target');
+    target.revsDiff(diff, utils.safe.catchSyncronousErrors(callback, function(error, diffs){
+      if(error)
+      {
+        log('could not process awaiting diffs, possibly disconnected');
+        callback(error);
+        return;
+      }
+      Object.keys(processing).map(function(seq){
         var change = queue[seq];
-        processing[seq] = change;
-        if(typeof filter !== 'undefined' && filter && !filter(change.doc))
+        var id = change.id;
+
+        var payload = {};
+        payload.change = change;
+        if(id  ==='task_3c52ff6d-c822-472e-9aa4-9406fd8e8538')
         {
-          diff[change.id] = [];
-          return;
+          log('diffs for id: ' + id);
+          log.dir(diffs[id]);
+          log('given');
+          log.dir(diff);
         }
-        diff[change.id] = change.changes.map(function(x) { return x.rev;});
+
+        if(diffs[id] && diffs[id].missing)
+        {
+          payload.missing = diffs[id].missing;
+        }
+        else
+        {
+          payload.missing = [];
+        }
+        delete queue[seq];
+        itemProcessed(seq, payload);
       });
-      log('getting diffs from target');
-      target.revsDiff(diff, utils.safe.catchSyncronousErrors(callback, function(error, diffs){
-        if(error)
-        {
-          log('could not process awaiting diffs, possibly disconnected');
-          callback(error);
-          return;
-        }
-        Object.keys(processing).map(function(seq){
-            var change = queue[seq];
-            var id = change.id;
-
-            var payload = {};
-            payload.change = change;
-            if(id  ==='task_3c52ff6d-c822-472e-9aa4-9406fd8e8538')
-            {
-              log('diffs for id: ' + id);
-              log.dir(diffs[id]);
-              log('given');
-              log.dir(diff);
-            }
-
-            if(diffs[id] && diffs[id].missing)
-            {
-              payload.missing = diffs[id].missing;
-            }
-            else
-            {
-              payload.missing = [];
-            }
-            delete queue[seq];
-            itemProcessed(seq, payload);
-        });
-        callback();
-      }));
+      callback();
+    }));
   };
   return that;
 };
@@ -126,6 +126,10 @@ var getAwaitingGetProcessor =  function(src){
     assert.ok(payload);
     assert.ok(logs);
     assert.ok(callback);
+    if(state.cancelled)
+    {
+      return;
+    }
 
 
     var foundRevs = [];
@@ -133,8 +137,16 @@ var getAwaitingGetProcessor =  function(src){
     var change = payload.change;
     logs('get processor running');
     async.forEachSeries(missing, function(rev, cbk2){
+      if(state.cancelled)
+      {
+        return;
+      }
       logs('gettig revs for ' + rev);
       src.get(change.id, {revs: true, rev: rev, attachments: true}, utils.safe(cbk2, function(error, got) {
+        if(state.cancelled)
+        {
+          return;
+        }
         if(error)
         {
           logs('error getting rev: ' + rev + ' id : '  + change.id + ' for seq: ' + seq);
@@ -146,6 +158,10 @@ var getAwaitingGetProcessor =  function(src){
         cbk2();
       }));
     }, function(error){
+      if(state.cancelled)
+      {
+        return;
+      }
       if(error)
       {
         logs('could not get revs for ' + seq);
@@ -157,18 +173,30 @@ var getAwaitingGetProcessor =  function(src){
       callback(null, payload);
     });
   });
-  return that;
+return that;
 };
 
 var getAwaitingSaveProcessor = function(target){
   var p = processor(function(seq, payload, state, logs, callback){
     var change = payload.change;
     var revs = payload.revs;
+    if(state.cancelled)
+    {
+      return;
+    }
     async.forEachSeries(revs, function(rev, cbk){
+      if(state.cancelled)
+      {
+        return;
+      }
       assert.ok(rev);
       logs('saving rev' + rev._rev);
 
       target.bulkDocs({docs: [rev]}, {new_edits: false}, utils.safe.catchSyncronousErrors(cbk, function(error, response){
+        if(state.cancelled)
+        {
+          return;
+        }
         if(error)
         {
           //logs('Possible problem saving seq: ' + seq + ' id: ' + rev._id);
@@ -189,28 +217,32 @@ var getAwaitingSaveProcessor = function(target){
         }
         else if(response.length > 0)
         {
-            var revResponse = response[0];
-            if(revResponse.error)
-            {
-              logs('Error saving rev');
-              var e = new Error('bulkDocs error: ' + revResponse.error + ', ' + revResponse.reason + ' for id: ' + rev._id);
-              logs.error(e, 'bulkDocs error');
-              cbk(e);
-              return;
-            }
+          var revResponse = response[0];
+          if(revResponse.error)
+          {
+            logs('Error saving rev');
+            var e = new Error('bulkDocs error: ' + revResponse.error + ', ' + revResponse.reason + ' for id: ' + rev._id);
+            logs.error(e, 'bulkDocs error');
+            cbk(e);
+            return;
+          }
         }
         logs('successfully saved: ' + rev._id);
         cbk();
       }));
-    }, function(error){
-      if(error)
-      {
-        callback(error);
-        return;
-      }
-      callback(null, change);
-    });
-  });
-  return p;
+}, function(error){
+  if(state.cancelled)
+  {
+    return;
+  }
+  if(error)
+  {
+    callback(error);
+    return;
+  }
+  callback(null, change);
+});
+});
+return p;
 };
 
