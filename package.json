@@ -4,8 +4,7 @@
   "description": "tools for replicating and securing pouch/couch db",
   "main": "index.js",
   "scripts": {
-    "test": "grunt test",
-    "install": "grunt install"
+    "test": "grunt test"
   },
   "repository": {
     "type": "git",
@@ -31,7 +30,7 @@
     "grunt": "0.4.1",
     "grunt-shell": "0.2.2",
     "grunt-contrib": "0.7.0",
-    "pouchdb": "git://github.com/jamesjwood/pouchdb.git"
+    "pouchdb": "git://github.com/daleharvey/pouchdb.git"
   },
   "browser": {
     "REQUIRE_PATH": false
