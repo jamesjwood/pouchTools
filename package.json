@@ -17,20 +17,20 @@
     "karma": "x",
     "grunt-karma": "x",
     "nano": "3.4.0",
-    "browserify": "1.17.3",
     "karma-safari-launcher": "~0.1.1",
     "mocha": "~1.13.0",
-    "karma-mocha": "~0.1.0"
-  },
-  "dependencies": {
-    "utils": "git://github.com/jamesjwood/utils.git",
-    "jsonCrypto": "git://github.com/jamesjwood/jsonCrypto.git",
-    "async": "~0.2.9",
+    "karma-mocha": "~0.1.0",
     "grunt-simple-mocha": "0.4.0",
     "grunt": "0.4.1",
     "grunt-shell": "0.2.2",
     "grunt-contrib": "0.7.0",
-    "pouchdb": "git://github.com/daleharvey/pouchdb.git"
+  },
+  "dependencies": {
+    "async": "~0.2.9",
+    "utils": "git://github.com/jamesjwood/utils.git",
+    "jsonCrypto": "git://github.com/jamesjwood/jsonCrypto.git",
+    "pouchdb": "git://github.com/daleharvey/pouchdb.git",
+    "browserify": "1.17.3"
   },
   "browser": {
     "REQUIRE_PATH": false
