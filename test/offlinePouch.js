@@ -17,17 +17,15 @@ var assert = require('assert');
 var utils = require('utils');
 var events = require('events');
 var sinon = require('sinon');
-var pouch;
 var rootDir;
+var pouch = require('pouchdb');
 if(typeof window != 'undefined')
 {
-  pouch= Pouch;
   rootDir = '';
 
 }
 else
 {
-  pouch = require('pouchdb');
   rootDir = 'stage/';
 }
 

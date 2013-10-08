@@ -29,8 +29,7 @@
     "async": "~0.2.9",
     "utils": "git://github.com/jamesjwood/utils.git",
     "jsonCrypto": "git://github.com/jamesjwood/jsonCrypto.git",
-    "pouchdb": "git://github.com/daleharvey/pouchdb.git",
-    "browserify": "1.17.3"
+    "pouchdb": "git://github.com/daleharvey/pouchdb.git"
   },
   "browser": {
     "REQUIRE_PATH": false

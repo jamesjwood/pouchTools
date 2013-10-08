@@ -15,18 +15,16 @@ var jsonCrypto = require('jsonCrypto');
 var localDbUrl;
 var EXPONENT = 65537;
 var MODULUS = 512;
-var pouch;
+var pouch = require('pouchdb');
 
 if(typeof window != 'undefined')
 {
 
 	localDbUrl ='';
-	pouch= Pouch;
 
 }
 else
 {
-	pouch = require('pouchdb');
 	localDbUrl = 'leveldb://stage/';
 }
 

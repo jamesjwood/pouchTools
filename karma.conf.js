@@ -14,8 +14,8 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-        './lib/pouch.js',
         './karma/testacularUnitSetup.js',
+        './node_modules/jsonCrypto/lib/forge.min.js',
         './stage/test.js'
     ],
 
