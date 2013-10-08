@@ -4,7 +4,8 @@
   "description": "tools for replicating and securing pouch/couch db",
   "main": "index.js",
   "scripts": {
-    "test": "grunt test"
+    "test": "grunt test",
+    "install": "grunt install"
   },
   "repository": {
     "type": "git",
@@ -29,7 +30,8 @@
     "async": "~0.2.9",
     "utils": "git://github.com/jamesjwood/utils.git",
     "jsonCrypto": "git://github.com/jamesjwood/jsonCrypto.git",
-    "pouchdb": "git://github.com/daleharvey/pouchdb.git"
+    "pouchdb": "git://github.com/daleharvey/pouchdb.git",
+    "browserify": "~2.34.0"
   },
   "browser": {
     "REQUIRE_PATH": false

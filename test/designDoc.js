@@ -123,7 +123,6 @@ describe('designDoc', function () {
 			};
 			testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, userCert, true, log);
 
-			log.dir(testDoc);
 			pouch(serverURL + '/test_designdoc_2', utils.cb(onDone, function(db){
 				log('putting design');
 				db.put(designDoc, utils.cb(onDone, function(){
@@ -131,6 +130,7 @@ describe('designDoc', function () {
 
 					db.put(testDoc, utils.safe(onDone, function(error){
 						assert.ok(error);
+						log.error(error);
 						assert.equal(0, error.reason.indexOf('Must have a type'));
 						done();
 					}));
@@ -516,7 +516,7 @@ describe('designDoc', function () {
 		}));
 	});
 
-		it('12: should check the doc size', function (done) {
+	it('12: should check the doc size', function (done) {
 		var log = masterLog.wrap('12');
 
 		var onDone = function(error){
@@ -543,10 +543,7 @@ describe('designDoc', function () {
 		}];
 
 		lib(typeSpecs, log.wrap('generating design doc'), utils.cb(onDone, function(designDoc){
-		
 			testDoc = jsonCrypto.signObject(testDoc, userKeyBufferPair.privatePEM, signedUserCert,  true, log);
-
-			log(JSON.stringify(testDoc));
 			pouch(serverURL + 'test_designdoc_12', utils.cb(onDone, function(db){
 				db.put(designDoc, utils.cb(onDone, function(){
 					db.put(testDoc, utils.safe(onDone, function(error){
@@ -557,7 +554,7 @@ describe('designDoc', function () {
 			}));
 		}));
 	});
-	/*
+/*
 	it('12: should run custom check', function (done) {
 		var log = masterLog.wrap('12');
 

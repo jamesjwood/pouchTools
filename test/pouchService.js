@@ -28,8 +28,6 @@ else
 	localDbUrl = 'leveldb://stage/';
 }
 
-
-
 var rootKeyBufferPair = jsonCrypto.generateKeyPEMBufferPair(MODULUS, EXPONENT);
 var rootCert = jsonCrypto.createCert('root', rootKeyBufferPair.publicPEM);
 

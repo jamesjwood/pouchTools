@@ -20,20 +20,20 @@ module.exports = function(typeSpecs, log, callback){
 	assert.ok(log);
 	assert.ok(callback);
 
-	var b = browserify();
-	b.ignore('domain');
-	b.require(__dirname + '/validateDoc.js');
 
-	var realtivePath =  '/src/validateDoc.js';
+	var realtivePath =  './src/validateDoc.js';
 
-	var validateDocBuff = b.bundle({});
-	assert.ok(validateDocBuff);
+	var validateDocBuff = fs.readFileSync(__dirname + '/../lib/validator.js');
+	var forgeBuff = fs.readFileSync(__dirname + '/../node_modules/jsonCrypto/lib/forge.min.js');
 
+	assert.ok(validateDocBuff);	
+	assert.ok(forgeBuff);	
 		var wrapperF = function(newDoc, oldDoc, userCtx){
 			try
 			{
 				var DOC_CODE;
-				var typeSpecs=TYPE_SPECS;
+				var FORGE_CODE;
+				var typeSpecs= TYPE_SPECS;
 				var validator = require('REQUIRE_PATH');
 				return validator(newDoc, oldDoc, userCtx, typeSpecs);
 			}
@@ -50,7 +50,8 @@ module.exports = function(typeSpecs, log, callback){
 			}
 		};
 		var wrapper = wrapperF.toString();
-		var validateDoc = wrapper.replace('var DOC_CODE;', validateDocBuff.toString('utf8'));
+		var validateDoc = wrapper.replace('var DOC_CODE;', validateDocBuff.toString());
+		validateDoc = validateDoc.replace('var FORGE_CODE;', forgeBuff.toString());
 		validateDoc = validateDoc.replace('REQUIRE_PATH', realtivePath);
 		validateDoc = validateDoc.replace('TYPE_SPECS', JSON.stringify(typeSpecs));
 
