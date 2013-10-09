@@ -24,7 +24,7 @@ module.exports = function(typeSpecs, log, callback){
 	var realtivePath =  './src/validateDoc.js';
 
 	var validateDocBuff = fs.readFileSync(__dirname + '/../lib/validator.js');
-	var forgeBuff = fs.readFileSync(__dirname + '/../node_modules/jsonCrypto/lib/forge.min.js');
+	var forgeBuff = fs.readFileSync(__dirname + '/../lib/forge.min.js');
 
 	assert.ok(validateDocBuff);	
 	assert.ok(forgeBuff);	
