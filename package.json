@@ -27,7 +27,7 @@
     "grunt-karma": "x"
   },
   "dependencies": {
-    "async": "~0.2.9",
+    "async": "0.2.x",
     "utils": "git://github.com/jamesjwood/utils.git",
     "jsonCrypto": "git://github.com/jamesjwood/jsonCrypto.git",
     "pouchdb": "git://github.com/daleharvey/pouchdb.git",
