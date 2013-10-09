@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "node node_modules/grunt-cli/bin/grunt test",
-    "install": "node node_modules/grunt-cli/bin/grunt install"
+    "install": "rm -rf lib; mkdir lib; node ./node_modules/browserify/bin/cmd.js  -o ./lib/validator.js -i domain -r ./src/validateDoc.js;"
   },
   "repository": {
     "type": "git",
@@ -16,23 +16,22 @@
   "devDependencies": {
     "sinon": "1.7.2",
     "karma": "x",
-    "grunt-karma": "x",
     "nano": "3.4.0",
     "karma-safari-launcher": "~0.1.1",
     "mocha": "~1.13.0",
-    "karma-mocha": "~0.1.0"
+    "karma-mocha": "~0.1.0",
+    "grunt-simple-mocha": "0.4.0",
+    "grunt": "0.4.1",
+    "grunt-shell": "0.2.2",
+    "grunt-contrib": "0.7.0",
+    "grunt-karma": "x"
   },
   "dependencies": {
     "async": "~0.2.9",
     "utils": "git://github.com/jamesjwood/utils.git",
     "jsonCrypto": "git://github.com/jamesjwood/jsonCrypto.git",
     "pouchdb": "git://github.com/daleharvey/pouchdb.git",
-    "browserify": "~2.34.0",
-    "grunt-cli": "~0.1.9",
-    "grunt-simple-mocha": "0.4.0",
-    "grunt": "0.4.1",
-    "grunt-shell": "0.2.2",
-    "grunt-contrib": "0.7.0"
+    "browserify": "~2.34.0"
   },
   "browser": {
     "REQUIRE_PATH": false
