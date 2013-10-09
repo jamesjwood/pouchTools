@@ -36,8 +36,8 @@ module.exports = function(grunt) {
         failOnError: true
       }
       ,
-      makeLib: {
-        command: 'rm -rf lib; mkdir lib',
+      makeBin: {
+        command: 'rm -rf bin; mkdir bin',
         stdout: true,
         stderr: true,
         failOnError: true
@@ -51,7 +51,7 @@ module.exports = function(grunt) {
       }
        ,
       browserifyValidator:{
-        command: 'node ./node_modules/browserify/bin/cmd.js  -o ./lib/validator.js -i domain -r ./src/validateDoc.js;',
+        command: 'node ./node_modules/browserify/bin/cmd.js  -o ./bin/validator.js -i domain -r ./src/validateDoc.js;',
         stdout: true,
         stderr: true,
         failOnError: true

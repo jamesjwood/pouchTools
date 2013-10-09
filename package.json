@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "node node_modules/grunt-cli/bin/grunt test",
-    "install": "rm -rf lib; mkdir lib; node ./node_modules/browserify/bin/cmd.js  -o ./lib/validator.js -i domain -r ./src/validateDoc.js;"
+    "install": "rm -rf bin; mkdir bin; node ./node_modules/browserify/bin/cmd.js  -o ./bin/validator.js -i domain -r ./src/validateDoc.js;"
   },
   "repository": {
     "type": "git",

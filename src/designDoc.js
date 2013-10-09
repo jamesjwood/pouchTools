@@ -23,7 +23,7 @@ module.exports = function(typeSpecs, log, callback){
 
 	var realtivePath =  './src/validateDoc.js';
 
-	var validateDocBuff = fs.readFileSync(__dirname + '/../lib/validator.js');
+	var validateDocBuff = fs.readFileSync(__dirname + '/../bin/validator.js');
 	var forgeBuff = fs.readFileSync(__dirname + '/../lib/forge.min.js');
 
 	assert.ok(validateDocBuff);	
