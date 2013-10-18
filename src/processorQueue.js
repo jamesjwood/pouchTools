@@ -16,7 +16,10 @@ module.exports =function(processor, retryInterval){
   that.cancelled = false;
   that.cancel = function(){
     that.cancelled = true;
-    processor.cancel();
+    if(processor && processor.cancel)
+    {
+      processor.cancel();
+    }
     that.emit('cancelled');
     that.removeAllListeners();
   };

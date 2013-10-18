@@ -323,7 +323,14 @@ that.cancel = function(){
 };
 
 that.on('error', function(){
-  that.cancel();
+  try
+  {
+    that.cancel();
+  }
+  catch(e)
+  {
+    log('Could not cancel');
+  }
 });
 
 setup();

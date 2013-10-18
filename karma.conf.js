@@ -20,7 +20,7 @@ module.exports = function(config) {
     ],
 
 
-    // list of files to exclude
+    // list of files to excludec
     exclude: [
       
     ],
