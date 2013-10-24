@@ -80,9 +80,9 @@ that.wipeLocal = function(slog, cbk){
 };
 
 
-that.on('error', function(){
-	that.cancel();
-});
+//that.on('error', function(){
+	//that.cancel();
+//});
 
 
 that.newDatabase('services', 'services', {localOnly: true}, log.wrap('newDatabase, services'));

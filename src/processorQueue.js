@@ -4,12 +4,23 @@ var jsonCrypto = require('jsonCrypto');
 var async = require('async');
 var assert = require('assert');
 
-module.exports =function(processor, retryInterval){
+module.exports =function(processor, retryInterval, name){
   var queue = {};
   retryInterval = retryInterval || 500;
 
   var that = new events.EventEmitter();
-  var log = utils.log(that);
+  that.name = name;
+
+  var log;
+  if(name)
+  {
+    log = utils.log(that).wrap(name);
+  }
+  else
+  {
+    log = utils.log(that);
+  }
+
   var processorLog = log.wrap('processor');
 
 

@@ -191,7 +191,7 @@ module.exports = function(name, url, opts, log){
 				cbk();					
 			}
 
-			var repOpts = {filter: filter, continuous: true};
+			var repOpts = {filter: filter, continuous: true, retries: -1, retryInterval: 5000};
 			if(opts.checkpointDb)
 			{
 				repOpts.checkpointDb = opts.checkpointDb;
@@ -271,9 +271,9 @@ module.exports.getServerDb = function(pouchdb, url, retries, retryDelay, log, ca
 			if(error)
 			{
 				log('error getting pouch');
-				if(error.status === 400 || error.status === 404 ||error.status === 0)
+				if(error.status === 400 || error.status === 404 || error.status === 0)
 				{
-					//timeout or not availab
+					//timeout or not available
 					log('failed to get pouch');
 					if(retries ===0)
 					{
