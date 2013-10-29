@@ -14,6 +14,7 @@ var events = require('events');
 var masterLog = utils.log().wrap('processorQueue');
 
 var lib = require('../src/processorQueue.js');
+var processor = require('../src/processor.js');
 
 var async = require('async');
 
@@ -59,7 +60,7 @@ describe('processorQueue', function () {
   });
   queue.enqueue(1, {id: 'hello'});
 });
-   it('2: should raise processed events', function (done) {
+  it('2: should raise processed events', function (done) {
    var mylog = masterLog.wrap('2');
    var onDone = function (error) {
     if (error) {
@@ -92,10 +93,71 @@ describe('processorQueue', function () {
   var payload = 'hello';
 
   queue.on('itemProcessed', function(seq, pay){
-     assert.equal('1', seq);
-     assert.equal('hello', pay);
-     onDone();
-  });
+   assert.equal('1', seq);
+   assert.equal('hello', pay);
+   onDone();
+ });
   queue.enqueue('1', payload);
 });
+
+  this.timeout(10000);
+  it('3: should process items in order', function (done) {
+   var mylog = masterLog.wrap('3');
+   var onDone = function (error) {
+    if (error) {
+      mylog.error(error);
+    }
+    done(error);
+  };
+    var j=0;
+    var t = false;
+
+    var queueProcessor = processor(function(seq, pay, state,lg,cbk){
+      mylog('processing ' + seq);
+      assert.equal(j.toString(), seq);
+      if(j === 200)
+      {
+        onDone();
+        return;
+      }
+      else
+      {
+        //fake an error
+        if(j ===100 && t === false)
+        {
+          t = true;
+          setTimeout(function(){
+            cbk({critical:false, message:'fake error'});
+          }, 5);
+        }
+        else
+        {
+          j++;
+          setTimeout(cbk, 5);
+        }
+      }
+    });
+
+    var queue = lib(queueProcessor);
+    
+    queue.on('error', onDone);
+    utils.log.emitterToLog(queue, mylog.wrap('queue'));
+ 
+    for(var i = 0; i <= 100; i ++)
+    {
+      mylog('queueing ' + i);
+      queue.enqueue(i.toString(), {id: i});
+    }
+
+    var addItem = function(){
+      if(i>200)
+      {
+        return;
+      }
+      queue.enqueue(i.toString(), {id: i});
+      i++;
+      setTimeout(addItem, 3);
+    };
+    addItem();
+  });
 });

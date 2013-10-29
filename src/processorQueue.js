@@ -5,7 +5,10 @@ var async = require('async');
 var assert = require('assert');
 
 module.exports =function(processor, retryInterval, name){
-  var queue = {};
+  var incomingQueue = {};
+  var processingQueue= {};
+
+
   retryInterval = retryInterval || 500;
 
   var that = new events.EventEmitter();
@@ -26,18 +29,20 @@ module.exports =function(processor, retryInterval, name){
 
   that.cancelled = false;
   that.cancel = function(){
-    that.cancelled = true;
-    if(processor && processor.cancel)
+    if(!that.cancelled)
     {
-      processor.cancel();
-    }
-    that.emit('cancelled');
-    that.removeAllListeners();
+      that.cancelled = true;
+      if(processor && processor.cancel)
+      {
+        processor.cancel();
+      }
+      that.emit('cancelled');
+      that.removeAllListeners();
+    } 
   };
 
   var itemsBeingProcessed = [];
   var processing = false;
-  var awaitingProcessing = false;
   that.offline = true;
 
   var setOffline= function(off){
@@ -48,23 +53,12 @@ module.exports =function(processor, retryInterval, name){
     }
   };
 
-  var allItemsProcesseed = function(orginalAsArray, updated, unprocessed){
-    var all = true;
-    if(Object.keys(updated).length !== 0)
-    {
-      orginalAsArray.map(function(key){
-        if(typeof updated[key] !== undefined)
-        {
-          unprocessed.push(key);
-          all = false;
-        }
-      });
-    }
-    return all;
-  };
 
   that.doneProcessing = function(error){
-    that.queued = Object.keys(queue).length;
+    var processingCount = Object.keys(processingQueue).length;
+    var incomingCount = Object.keys(incomingQueue).length;
+    var totalCount = processingCount  + incomingCount;
+
     if(!that.cancelled)
     {
       if(error)
@@ -77,27 +71,34 @@ module.exports =function(processor, retryInterval, name){
           that.cancel();
           return;
         }
-        else
-        {
-          log('items failed to process, scheduling a retry in ' + retryInterval/100 + ' seconds');
-          setOffline(true);
-          setTimeout(that.process, retryInterval);
-          processing = false;
-          that.emit('state', 'idle');
-          return;
-        }
       }
       that.emit('log', 'done processing');
-      processing = false;
-      setOffline(false);
-      if(awaitingProcessing)
+      
+      if(totalCount>0)
+      {
+        log('still processing to do');
+        if(processingCount>0)
         {
-          log('more added while processing');
-          setTimeout(that.process, 0);
+          log('sheduling retry in 5 seconds');
+          setTimeout(function(){
+            processing = false;
+            that.checkToProcess();
+          }, 5000);
         }
         else
+        {
+          log('new items added, processing immediately');
+          setTimeout(function(){
+            processing = false;
+            that.checkToProcess();
+          }, 0);
+          
+        }
+
+      }
+      else
       {
-          awaitingProcessing = false;
+          processing = false;
           that.emit('state', 'idle');
       }
     }
@@ -108,35 +109,38 @@ module.exports =function(processor, retryInterval, name){
   };
 
   that.process = utils.safe.catchSyncronousErrors(that.doneProcessing, function(){
+    that.emit('state', 'busy');
+    log('initiating processing');
+    processing = true;
+    log('calling process');
+    utils.safe.catchSyncronousErrors(that.doneProcessing, processor)(processingQueue, itemProcessed, processorLog, that.doneProcessing);
+  });
+
+  that.checkToProcess = utils.safe.catchSyncronousErrors(that.doneProcessing, function(){
     if(!processing && !that.cancelled)
     {
-      itemsBeingProcessed = Object.keys(queue);
-      that.queued = itemsBeingProcessed.length;
-      if(that.queued > 0)
+      log('not processing, going ahead');
+      for(var seq in incomingQueue)
       {
-        that.emit('state', 'busy');
-        log('initiating processing');
-        awaitingProcessing = false;
-        processing = true;
-        log('calling process');
-        utils.safe.catchSyncronousErrors(that.doneProcessing, processor)(queue, itemProcessed, processorLog, that.doneProcessing);
+        processingQueue[seq] = incomingQueue[seq];
+        delete incomingQueue[seq];
       }
-      else
+      var beingProcessed = Object.keys(processingQueue).length;
+      if(beingProcessed > 0)
       {
-        that.doneProcessing();
+        that.process();
       }
-      return;
     }
-    awaitingProcessing = true;
+    else
+    {
+      log('already processing');
+    }
   });
 
   that.enqueue = function(seq, payload){
     log('change queued ' + seq);
-    queue[seq]= payload;
-    if(!that.cancelled)
-    {
-      that.process();
-    }
+    incomingQueue[seq]= payload;
+    that.checkToProcess();
   };
 
   return that;

@@ -25,7 +25,6 @@
 
  describe('processor', function () {
   'use strict';
-
   it('1: processor should call function and remove item from queue', function (done) {
    var mylog = masterLog.wrap('1');
    var onDone = function (error) {
