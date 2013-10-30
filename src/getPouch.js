@@ -11,7 +11,7 @@ module.exports =  function(url, log, callback){
 			log.error(error);
 			log('retrying in 10 seconds');
 			setTimeout(utils.safe(callback, function(){
-				module.exports.getPouch(url, log, callback);
+				module.exports(url, log, callback);
 			}), 10000);
 		}
 		else
