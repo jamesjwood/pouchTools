@@ -201,7 +201,13 @@ return that;
 
 var checkExists = function(target, id, rev, log, callback)
 {
-  target.get(rev._id, {rev: rev._rev}, utils.safe(callback, function(error, doc){
+  assert.ok(target);
+  assert.ok(id);
+  assert.ok(rev);
+  assert.ok(log);
+  assert.ok(callback);
+  log('checking id: ' + id + ' rev: ' + rev);
+  target.get(id, {rev: rev}, utils.safe(callback, function(error, doc){
     if(error)
     {
       if(typeof error.status !=='undefined' && error.status === 0)

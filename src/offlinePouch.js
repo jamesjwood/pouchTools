@@ -196,7 +196,7 @@ module.exports = function(name, url, opts, log){
 			{
 				repOpts.checkpointDb = opts.checkpointDb;
 			} 
-			repOpts.reset = true;
+			//repOpts.reset = true;
 
 			var upReplicator = replicator(localDB, serverDB, repOpts, rlog.wrap('init up replicator'));
 			setReplicator('up', upReplicator);
