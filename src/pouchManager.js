@@ -30,6 +30,8 @@ that.newDatabase = function(name, url, opts, setupLog){
 	return database;
 };
 that.newService =  function(name, databaseName, queues, opts, setupLog){
+	
+	that.newDatabase('services', 'services', {localOnly: true}, log.wrap('newDatabase, services'));
 	setupLog('creating service: '+ name);
 	assert.ok(name);
 	assert.ok(queues);
@@ -85,6 +87,6 @@ that.wipeLocal = function(slog, cbk){
 //});
 
 
-that.newDatabase('services', 'services', {localOnly: true}, log.wrap('newDatabase, services'));
+
 
 module.exports = that;
