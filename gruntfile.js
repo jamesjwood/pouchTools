@@ -141,7 +141,7 @@ grunt.loadNpmTasks('grunt-simple-mocha');
 grunt.loadNpmTasks('grunt-karma');
 
 grunt.registerTask('install', ['shell:makeLib', 'shell:browserifyValidator']);
-grunt.registerTask('default', ['jshint', 'shell:makeStage', 'simplemocha']);
-grunt.registerTask('test', ['shell:browserify', 'karma:local']);
+grunt.registerTask('default', ['jshint']);
+grunt.registerTask('test', [, 'shell:makeStage', 'simplemocha', 'shell:browserify', 'karma:local']);
 
 };

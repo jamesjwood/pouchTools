@@ -5,6 +5,7 @@ var events = require('events');
 var replicator = require('./replicator.js');
 var assert = require('assert');
 var url = require('url');
+var getPouch = require('./getPouch');
 
 var pouch = require('pouchdb');
 
@@ -240,7 +241,7 @@ module.exports = function(name, url, opts, log){
 			if(waitForInitialReplicate === true)
 			{
 				log('waiting for initial replication');
-				retries = 10;
+				retries = -1;
 				that.goOnline(url, log.wrap('going online'), utils.cb(setupComplete, function(){
 					setupComplete();
 				}));
@@ -267,31 +268,7 @@ module.exports.getServerDb = function(pouchdb, url, retries, retryDelay, log, ca
 	utils.safe(callback, function(){
 		var ret  = retries;
 		log('pouch get db: ' + url);
-		pouchdb(url, utils.safe(callback, function(error, db){
-			if(error)
-			{
-				log('error getting pouch');
-				if(error.status === 400 || error.status === 404 || error.status === 0)
-				{
-					//timeout or not available
-					log('failed to get pouch');
-					if(retries ===0)
-					{
-						log.error(error);
-						callback(error);
-					}
-					else
-					{
-						log('retrying in ' + retryDelay + ' milliseconds');
-						setTimeout(function(){
-							module.exports.getServerDb(pouchdb,url, retries-1, retryDelay, log, callback);
-						}, retryDelay);
-					}
-					return;
-				}
-				callback(error);
-				return;
-			}
+		getPouch(url, log.wrap('getPouch'), utils.cb(callback, function(db){
 			log('pouch found');
 			callback(null, db);
 		}));
