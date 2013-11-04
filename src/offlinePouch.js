@@ -143,7 +143,7 @@ module.exports = function(name, url, opts, log){
 		}
 		retries = 0;
 		log('no browser support for local data, or serverOnly specified,  returning serverdb');
-		module.exports.getServerDb(pouch, url, retries, retryDelay, log.wrap('getting serverdb'),  utils.cb(setupComplete, function(sdb){
+		module.exports.getServerDb(url, retries, retryDelay, log.wrap('getting serverdb'),  utils.cb(setupComplete, function(sdb){
 			log('got server db');
 			serverDB = sdb;
 			setActiveDB(serverDB, 'server');
@@ -179,7 +179,7 @@ module.exports = function(name, url, opts, log){
 	that.goOnline = function(serverurl, rlog, cbk){
 		retries = -1;
 		rlog('getting serverdb');
-		module.exports.getServerDb(pouch,serverurl, retries, retryDelay,  rlog.wrap('getting serverdb'), utils.cb(cbk, function(sdb){
+		module.exports.getServerDb(serverurl, retries, retryDelay,  rlog.wrap('getting serverdb'), utils.cb(cbk, function(sdb){
 			rlog('init replication');
 			serverDB= sdb;
 			//if there is no active db then use the server, better than nothing
@@ -264,7 +264,7 @@ module.exports = function(name, url, opts, log){
 };
 
 
-module.exports.getServerDb = function(pouchdb, url, retries, retryDelay, log, callback){
+module.exports.getServerDb = function(url, retries, retryDelay, log, callback){
 	utils.safe(callback, function(){
 		var ret  = retries;
 		log('pouch get db: ' + url);

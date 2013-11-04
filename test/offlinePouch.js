@@ -63,62 +63,6 @@ describe('offlinePouch', function () {
     });
   });
 
-   it('1: get server db should try to get server pouch', function (done) {
-    var log = masterLog.wrap('1');
-    var onDone = function(error){
-      if(error)
-      {
-        log.error(error);
-      }
-      done(error);
-    };
-
-    var fakedb = {};
-
-    var fakePouch = function(url, cbk){
-      assert.equal('myurl', url);
-      cbk(null, fakedb);
-    };
-
-    lib.getServerDb(fakePouch, 'myurl', 2, 2,log.wrap('getting serverDb'), utils.cb(onDone, function(db){
-      assert.equal(fakedb, db);
-      onDone();
-    }));
-  });  
-
-   it('2: get server db should retry if db fails', function (done) {
-    var log = masterLog.wrap('2');
-    var onDone = function(error){
-      if(error)
-      {
-        log.error(error);
-      }
-      done(error);
-    };
-
-    var fakedb = {};
-    var count = 2;
-
-    var fakePouch = function(url, cbk){
-      assert.equal('http://myurl', url);
-      if(count ===0)
-      {
-        cbk(null, fakedb);
-      }
-      else
-      {
-        count--;
-        cbk({status: 400});
-      }
-    };
-
-    lib.getServerDb(fakePouch, 'http://myurl', 2, 2, log.wrap('getting serverDb'), utils.cb(onDone, function(db){
-      assert.equal(fakedb, db);
-      onDone();
-    }));
-  });
- 
-
    it('3: getLocalDb', function (done) {
     var log = masterLog.wrap('3');
     var onDone = function(error){

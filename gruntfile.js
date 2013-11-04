@@ -135,13 +135,14 @@ grunt.registerTask('bundleForge', function(){
 
   console.log('RSA bundle written to: ' + bundle);
 });
-grunt.loadNpmTasks('grunt-contrib');
 grunt.loadNpmTasks('grunt-shell');
 grunt.loadNpmTasks('grunt-simple-mocha');
 grunt.loadNpmTasks('grunt-karma');
+grunt.loadNpmTasks('grunt-contrib-watch');
+grunt.loadNpmTasks('grunt-contrib-jshint');
 
 grunt.registerTask('install', ['shell:makeLib', 'shell:browserifyValidator']);
 grunt.registerTask('default', ['jshint']);
-grunt.registerTask('test', [, 'shell:makeStage', 'simplemocha', 'shell:browserify', 'karma:local']);
+grunt.registerTask('test', ['default', 'shell:makeStage', 'simplemocha', 'shell:browserify', 'karma:local']);
 
 };

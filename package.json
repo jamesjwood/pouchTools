@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "node node_modules/grunt-cli/bin/grunt test",
-    "install": "rm -rf bin; mkdir bin; node ./node_modules/browserify/bin/cmd.js  -o ./bin/validator.js -i domain -r ./src/validateDoc.js;"
+    "install": "rm -rf bin; mkdir bin; node ./node_modules/browserify/bin/cmd.js  -o ./bin/validator.js -i domain -r ./src/validateDoc.js;",
+    "link": "npm link utils;npm link jsonCrypto;npm link;"
   },
   "repository": {
     "type": "git",
@@ -14,24 +15,25 @@
   "author": "James Wood <james.wood@datatransparency.com>",
   "license": "BSD",
   "devDependencies": {
-    "sinon": "1.7.2",
-    "karma": "x",
-    "nano": "3.4.0",
-    "karma-safari-launcher": "~0.1.1",
-    "mocha": "~1.13.0",
-    "karma-mocha": "~0.1.0",
-    "grunt-simple-mocha": "0.4.0",
-    "grunt": "0.4.1",
-    "grunt-shell": "0.2.2",
-    "grunt-contrib": "0.7.0",
-    "grunt-karma": "x"
+    "sinon": "1.7.x",
+    "nano": "4.1.x",
+    "karma-safari-launcher": "0.1.x",
+    "mocha": "1.14.x",
+    "karma-mocha": "0.1.x",
+    "grunt-simple-mocha": "0.4.x",
+    "grunt": "0.4.x",
+    "grunt-shell": "0.5.x",
+    "grunt-contrib-jshint": "0.7.x",
+    "grunt-contrib-watch": "0.5.x",
+    "grunt-karma": "0.6.x",
+    "brfs": "0.0.x"
   },
   "dependencies": {
     "async": "0.2.x",
     "utils": "git://github.com/jamesjwood/utils.git",
     "jsonCrypto": "git://github.com/jamesjwood/jsonCrypto.git",
     "pouchdb": "git://github.com/daleharvey/pouchdb.git",
-    "browserify": "~2.34.0"
+    "browserify": "2.34.x"
   },
   "browser": {
     "REQUIRE_PATH": false
