@@ -6,6 +6,7 @@ var processorQueue = require('./processorQueue.js');
 var processor = require('./processor.js');
 var async = require('async');
 var assert = require('assert');
+var retryHTTP = require('./retryHTTP');
 
 
 var getAwaitingNotifyProcessor = function(writeCheckpoint, target_at_seq, checkpointDB, id, hideCheckpoints){
@@ -75,7 +76,7 @@ var fetchCheckpoint = function(checkpointDB, id, hideCheckpoints, log, callback)
   }
 
 
-  checkpointDB.get(cid, function(err, doc) {
+  retryHTTP(checkpointDB.get)(cid, function(err, doc) {
     if (err && err.status === 404) {
       log('could not get checkpoint with id: ' + cid);
       callback(null, 0);
@@ -99,7 +100,7 @@ var writeCheckpoint = function(checkpointDB, id, seq, hideCheckpoints, log, call
     check._id = '_local/' + check._id;
   }
   log('checking for existing checkpoint: ' + seq);
-  checkpointDB.get(check._id, function(err, doc) {
+  retryHTTP(checkpointDB.get)(check._id, function(err, doc) {
     if (doc && doc._rev) {
       check._rev = doc._rev;
       log('existing checkpoint at : ' + doc.last_seq);
@@ -113,7 +114,7 @@ var writeCheckpoint = function(checkpointDB, id, seq, hideCheckpoints, log, call
     {
       log('no existing checkpoint');
     }
-    checkpointDB.put(check, function(err, doc) {
+    retryHTTP(checkpointDB.put)(check, function(err, doc) {
       log('wrote checkpoint: ' + seq);
       callback();
     });

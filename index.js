@@ -7,6 +7,7 @@ module.exports.processorQueue = require('./src/processorQueue.js');
 module.exports.processorQueueStack = require('./src/processorQueueStack.js');
 module.exports.pouchManager= require('./src/pouchManager.js');
 module.exports.getPouch= require('./src/getPouch.js');
+module.exports.retryHTTP= require('./src/retryHTTP.js');
 
 
 if(typeof window ==='undefined')

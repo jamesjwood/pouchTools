@@ -15,6 +15,7 @@ var processor = require('./processor.js');
 var processorQueue = require('./processorQueue.js');
 var processorQueueStack = require('./processorQueueStack.js');
 
+var retryHTTP = require('./retryHTTP');
 var pouchService = require('./pouchService.js');
 
 
@@ -152,7 +153,7 @@ var getAwaitingGetProcessor =  function(src){
         return;
       }
       logs('gettig revs for ' + rev);
-      src.get(change.id, {revs: true, rev: rev, attachments: true}, utils.safe(cbk2, function(error, got) {
+      retryHTTP(src.get)(change.id, {revs: true, rev: rev, attachments: true}, utils.safe(cbk2, function(error, got) {
         if(state.cancelled)
         {
           return;
@@ -207,7 +208,7 @@ var checkExists = function(target, id, rev, log, callback)
   assert.ok(log);
   assert.ok(callback);
   log('checking id: ' + id + ' rev: ' + rev);
-  target.get(id, {rev: rev}, utils.safe(callback, function(error, doc){
+  retryHTTP(target.get)(id, {rev: rev}, utils.safe(callback, function(error, doc){
     if(error)
     {
       if(typeof error.status !=='undefined' && error.status === 0)
@@ -276,7 +277,7 @@ var getAwaitingSaveProcessor = function(target){
       checkExists(target, rev._id, rev._rev, logs.wrap('checking exists'), utils.cb(cbk, function(exists){
         if(exists===false)
         {
-          target.bulkDocs({docs: [rev]}, {new_edits: false}, utils.safe.catchSyncronousErrors(cbk, function(error, response){
+          retryHTTP(target.bulkDocs)({docs: [rev]}, {new_edits: false}, utils.safe.catchSyncronousErrors(cbk, function(error, response){
             if(state.cancelled)
             {
               return;
