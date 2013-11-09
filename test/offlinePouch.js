@@ -62,6 +62,11 @@ describe('offlinePouch', function () {
       done();
     });
   });
+  after(function(done){
+    cleanDB(function(){
+      done();
+    });
+  });
 
    it('3: getLocalDb', function (done) {
     var log = masterLog.wrap('3');
@@ -159,12 +164,10 @@ it('6: if offline, should be able to start using anyway', function (done) {
       return true;
     });
 
-    var offlinePouch =lib('noServer', noServerURL,{retries: -1, retryDelay: 200, waitForInitialReplicate: false}, log.wrap('creating offline pouch'));
+    var offlinePouch =lib('test_offlinepouch_6', noServerURL,{retries: -1, retryDelay: 200, waitForInitialReplicate: false}, log.wrap('creating offline pouch'));
     offlinePouch.on('setupComplete', function(){
       offlinePouch.put({_id: 'testdoc2'}, utils.cb(onDone, function(){
-              offlinePouch.wipeLocal(log.wrap('wipeLocal'),utils.cb(onDone, function(){
-                onDone();
-              }));
+        onDone();
       }));
     });
 

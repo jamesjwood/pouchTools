@@ -63,14 +63,11 @@ module.exports =function(processor, retryInterval, name){
     {
       if(error)
       {
-        if(typeof error.critical === 'undefined' || error.critical === null || error.critical === true)
-        {
-          setOffline(true);
-          log('error processing queue: '+ error.message);
-          log.error(error);
-          that.cancel();
-          return;
-        }
+        setOffline(true);
+        log('error processing queue: '+ error.message);
+        log.error(error);
+        that.cancel();
+        return;
       }
       that.emit('log', 'done processing');
       

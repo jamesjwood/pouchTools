@@ -5,9 +5,11 @@ var events = require('events');
 var replicator = require('./replicator.js');
 var assert = require('assert');
 var url = require('url');
-var getPouch = require('./getPouch');
 
 var pouch = require('pouchdb');
+
+
+var retryHTTP = require('./retryHTTP.js');
 
 
 module.exports = function(name, url, opts, log){
@@ -253,6 +255,7 @@ module.exports = function(name, url, opts, log){
 				setActiveDB(localDB, 'local');
 				that.goOnline(url, runLog.wrap('going online'), function(error){
 					if(error){
+						console.dir(error);
 						runLog.error(error);
 					}
 				});
@@ -268,7 +271,7 @@ module.exports.getServerDb = function(url, retries, retryDelay, log, callback){
 	utils.safe(callback, function(){
 		var ret  = retries;
 		log('pouch get db: ' + url);
-		getPouch(url, log.wrap('getPouch'), utils.cb(callback, function(db){
+		retryHTTP(pouch, log.wrap('retryHTTP'))(url, utils.cb(callback, function(db){
 			log('pouch found');
 			callback(null, db);
 		}));

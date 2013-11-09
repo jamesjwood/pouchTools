@@ -2,7 +2,7 @@
 
 
 
-var errorCodes = [0, 401, 402, 408, 407, 500, 501, 503, 504, 505];
+var errorCodes = [0, 400, 401, 402, 408, 407, 500, 501, 503, 504, 505];
 
 var isError = function(status){
 	var found = false;
@@ -15,29 +15,49 @@ var isError = function(status){
 	return found;
 };
 
-module.exports = function(toWrap, inTimeout){
-	var timeout = inTimeout || 5000;
+module.exports = function(toWrap, log, opts){
+	opts = opts || {};
+	var timeout = opts.timeout || 5000;
+	var retries = opts.retries || -1;
 	var that = function(){
 		var argsArray = [];
 		for(var i =0; i < arguments.length; i++)
 		{
 			argsArray.push(arguments[i]);
 		}
+		var newCallback;
+		var wrapped = function(){
+			try
+			{
+				toWrap.apply(null, argsArray);			
+			}
+			catch(e)
+			{
+				log('caught sync error');
+				newCallback(e);
+			}
+		};
+
 		var oldCallback = argsArray.pop();
-		var newCallback = function(error){
+		newCallback = function(error){
 			if(error && typeof error.status !== 'undefined' && isError(error.status))
 			{
+				if(retries ===0)
+				{
+					return oldCallback.apply(this, arguments);
+				}
+				log('There was an error running the request, retrying in: ' + timeout + ' milliseconds');
 				//HTTP connection error, schedule a retry
-				setTimeout(function(){
-					toWrap.apply(null, argsArray);
-				}, timeout);
+				setTimeout(wrapped, timeout);
+				retries--;
 				return;
 			}
 			return oldCallback.apply(this, arguments);
 		};
 
 		argsArray.push(newCallback);
-		toWrap.apply(null, argsArray);
+		wrapped();
+
 	};
 
 	return that;

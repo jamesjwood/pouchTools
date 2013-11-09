@@ -85,7 +85,7 @@ var getAwaitingDiffProcessor = function(filter, target){
       diff[cnhid] = cng.changes.map(function(x) { return x.rev;});
     });
     log('getting diffs from target');
-    target.revsDiff(diff, utils.safe.catchSyncronousErrors(callback, function(error, diffs){
+    retryHTTP(target.revsDiff)(diff, utils.safe.catchSyncronousErrors(callback, function(error, diffs){
       if(error)
       {
         log('could not process awaiting diffs for ' + JSON.stringify(diff));
@@ -164,16 +164,6 @@ var getAwaitingGetProcessor =  function(src){
           var e = new Error('error getting rev: ' + rev + ' id : '  + change.id + ' for seq: ' + seq);
           e.inner = error;
           e.arguments = change.id;
-          if(typeof error.status !== 'undefined' && error.status ===0)
-          {
-            logs('returning non critical error');
-            e.critical = false;
-          }
-          else
-          {
-            logs('returning critical error');
-            e.critical = true;
-          }
           cbk2(e);
           return;
         }

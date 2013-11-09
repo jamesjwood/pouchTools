@@ -122,19 +122,8 @@ describe('processorQueue', function () {
       }
       else
       {
-        //fake an error
-        if(j ===100 && t === false)
-        {
-          t = true;
-          setTimeout(function(){
-            cbk({critical:false, message:'fake error'});
-          }, 5);
-        }
-        else
-        {
-          j++;
-          setTimeout(cbk, 5);
-        }
+        j++;
+        setTimeout(cbk, 5);
       }
     });
 
