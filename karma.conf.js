@@ -11,7 +11,8 @@ module.exports = function(config) {
         './karma/testacularUnitSetup.js',
         './node_modules/jsonCrypto/lib/forge.min.js',
         './stage/test.js'
-        ]
+        ],
+        port: 9877
     });
 };
 
