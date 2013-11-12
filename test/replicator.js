@@ -89,7 +89,7 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
         var replicator = lib(serverdb, localdb, {}, mylog.wrap('init replicator'));
         replicator.on('error', mylog.wrap('replicator').error);
         replicator.on('setupComplete', function(){
-          replicator.on('initialReplicateComplete', function(change){
+          replicator.on('initialComplete', function(change){
             onDone();
           });
         });
@@ -163,7 +163,7 @@ pouch.destroy(remoteDbName, utils.safe(onDone, function (error) {
           replicator.on('error', function(error){
             onDone(error);
           });
-          replicator.on('initialReplicateComplete', function(change){
+          replicator.on('initialComplete', function(change){
             mylog('checking doc is synced');
             localdb.get('testitem', {}, utils.safe(onDone, function(err3, item){
               assert.ifError(err3);

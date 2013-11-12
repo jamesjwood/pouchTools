@@ -1,5 +1,5 @@
 //Function that retries on failed HTTP requests
-
+var assert = require('assert');
 
 
 var errorCodes = [0, 400, 401, 402, 408, 407, 500, 501, 503, 504, 505];
@@ -16,6 +16,8 @@ var isError = function(status){
 };
 
 module.exports = function(toWrap, log, opts){
+	assert.ok(toWrap, 'toWrap');
+	assert.ok(log,'log');
 	opts = opts || {};
 	var timeout = opts.timeout || 5000;
 	var retries = opts.retries || -1;

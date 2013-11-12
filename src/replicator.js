@@ -36,7 +36,7 @@ module.exports  = function (src, target, opts, initLog){
   var filter = opts.filter || null;
   var repId = genReplicationId(src, target, filter, initLog.wrap('genReplicationId'));
 
-  var awaitingDiff = processorQueue(getAwaitingDiffProcessor(filter, target), 5000, 'diff');
+  var awaitingDiff = processorQueue(getAwaitingDiffProcessor(filter, target, src), 5000, 'diff');
   var awaitingGet = processorQueue(getAwaitingGetProcessor(src), 5000, 'get');
   var awaitingSave = processorQueue(getAwaitingSaveProcessor(target), 5000, 'save');
 
@@ -61,7 +61,7 @@ module.exports  = function (src, target, opts, initLog){
 
 
 //the processors
-var getAwaitingDiffProcessor = function(filter, target){
+var getAwaitingDiffProcessor = function(filter, target, source){
   var that = function(queue, itemProcessed, log, callback){
     assert.ok(queue);
     assert.ok(itemProcessed);
@@ -71,62 +71,88 @@ var getAwaitingDiffProcessor = function(filter, target){
     var diff = {};
     var processing = {};
 
-    Object.keys(queue).map(function(seq){
+    async.forEachSeries(Object.keys(queue), function(seq, cbk){
       var cng = queue[seq];
       var cnhid = cng.id;
-      assert.ok(cng);
-      assert.ok(cnhid);
+      var rev = cng.rev;
+      var doc = cng.doc;
+      assert.ok(cng, 'change');
+      assert.ok(cnhid, 'id');
       processing[seq] = cng;
-      if(typeof filter !== 'undefined' && filter && !filter(cng.doc))
-      {
-        diff[cnhid] = [];
-        return;
-      }
-      diff[cnhid] = cng.changes.map(function(x) { return x.rev;});
-    });
-    log('getting diffs from target');
-    retryHTTP(target.revsDiff)(diff, utils.safe.catchSyncronousErrors(callback, function(error, diffs){
+      retryHTTP(source.get, log.wrap('retryHTTP'))(cnhid, {revs:true, rev: doc._rev}, utils.cb(cbk, function(doc){
+        var revisions = doc._revisions.ids;
+        var i = 0;
+        diff[cnhid] = revisions.reverse().map(function(rev){
+          i = i +1;
+          return i.toString() + "-" + rev;
+        });
+        cbk();
+      }));
+
+    }, function(error){
       if(error)
       {
-        log('could not process awaiting diffs for ' + JSON.stringify(diff));
-        log.dir(error);
-        var e = new Error('Error returned from revsDiff, possibly disconnected');
+        var e = new Error('Error getting doc with revisions');
         e.inner = error;
-        e.arguments = diff;
-        if(typeof error.status !== 'undefined' && error.status ===0)
-        {
-          log('returning non critical error');
-          e.critical = false;
-        }
-        else
-        {
-          log('returning critical error');
-          e.critical = true;
-        }
         callback(e);
         return;
       }
-      Object.keys(processing).map(function(seq){
-        var change = queue[seq];
-        assert.ok(change, 'There shoud be a change');
-        assert.ok(change.id, 'There shoud be a change id');
-        var id = change.id;
+      log('getting diffs from target');
+      retryHTTP(target.revsDiff, log.wrap('retryHTTP'))(diff, utils.safe.catchSyncronousErrors(callback, function(error, diffs){
+        if(error)
+        {
+          log('could not process awaiting diffs for ' + JSON.stringify(diff));
+          log.dir(error);
+          var e = new Error('Error returned from revsDiff, possibly disconnected');
+          e.inner = error;
+          e.arguments = diff;
+          if(typeof error.status !== 'undefined' && error.status ===0)
+          {
+            log('returning non critical error');
+            e.critical = false;
+          }
+          else
+          {
+            log('returning critical error');
+            e.critical = true;
+          }
+          callback(e);
+          return;
+        }
+        Object.keys(processing).map(function(seq){
+          var change = queue[seq];
+          assert.ok(change, 'There shoud be a change');
+          assert.ok(change.id, 'There shoud be a change id');
+          var id = change.id;
 
-        var payload = {};
-        payload.change = change;
-        if(diffs[id] && diffs[id].missing)
-        {
-          payload.missing = diffs[id].missing;
-        }
-        else
-        {
-          payload.missing = [];
-        }
-        delete queue[seq];
-        itemProcessed(seq, payload);
-      });
-      callback();
-    }));
+          var payload = {};
+          payload.change = change;
+          if(diffs[id] && diffs[id].missing)
+          {
+            payload.missing = diffs[id].missing;
+          }
+          else
+          {
+            payload.missing = [];
+          }
+          if(change.id === 'list_d384db49-f58c-4a96-9b79-f9d6a446cc35')
+          {
+            console.log("CHANGE FOUND:" + change.id);
+            console.dir(payload.missing);
+            console.log("DIFF");
+            console.dir(diff);
+          }
+
+          delete queue[seq];
+          itemProcessed(seq, payload);
+        });
+        callback();
+      }));
+});
+
+
+
+
 };
 return that;
 };
@@ -134,10 +160,10 @@ return that;
 
 var getAwaitingGetProcessor =  function(src){
   var that = processor(function(seq, payload, state, logs, callback){
-    assert.ok(seq);
-    assert.ok(payload);
-    assert.ok(logs);
-    assert.ok(callback);
+    assert.ok(seq, 'must have seq');
+    assert.ok(payload, 'must have payload');
+    assert.ok(logs, 'must have logs');
+    assert.ok(callback, 'must have callback');
     if(state.cancelled)
     {
       return;
@@ -153,13 +179,19 @@ var getAwaitingGetProcessor =  function(src){
         return;
       }
       logs('gettig revs for ' + rev);
-      retryHTTP(src.get)(change.id, {revs: true, rev: rev, attachments: true}, utils.safe(cbk2, function(error, got) {
+      retryHTTP(src.get, logs.wrap('retryHTTP'))(change.id, {revs: true, rev: rev, attachments: true}, utils.safe(cbk2, function(error, got) {
         if(state.cancelled)
         {
           return;
         }
         if(error)
         {
+          if(error.status !== '404')
+          {
+            logs('rev no longer available: ' + rev + ' id : '  + change.id + ' for seq: ' + seq);
+            cbk2();
+            return;
+          }
           logs('error getting rev: ' + rev + ' id : '  + change.id + ' for seq: ' + seq);
           var e = new Error('error getting rev: ' + rev + ' id : '  + change.id + ' for seq: ' + seq);
           e.inner = error;
@@ -192,13 +224,13 @@ return that;
 
 var checkExists = function(target, id, rev, log, callback)
 {
-  assert.ok(target);
-  assert.ok(id);
-  assert.ok(rev);
-  assert.ok(log);
-  assert.ok(callback);
+  assert.ok(target, 'must have target');
+  assert.ok(id, 'must have id');
+  assert.ok(rev, 'must have rev');
+  assert.ok(log, 'must have log');
+  assert.ok(callback, 'must have callback');
   log('checking id: ' + id + ' rev: ' + rev);
-  retryHTTP(target.get)(id, {rev: rev}, utils.safe(callback, function(error, doc){
+  retryHTTP(target.get, log.wrap('retryHTTP'))(id, {rev: rev}, utils.safe(callback, function(error, doc){
     if(error)
     {
       if(typeof error.status !=='undefined' && error.status === 0)
@@ -267,26 +299,25 @@ var getAwaitingSaveProcessor = function(target){
       checkExists(target, rev._id, rev._rev, logs.wrap('checking exists'), utils.cb(cbk, function(exists){
         if(exists===false)
         {
-          retryHTTP(target.bulkDocs)({docs: [rev]}, {new_edits: false}, utils.safe.catchSyncronousErrors(cbk, function(error, response){
+          retryHTTP(target.bulkDocs, logs.wrap('retryHTTP'))({docs: [rev]}, {new_edits: false}, utils.safe.catchSyncronousErrors(cbk, function(error, response){
             if(state.cancelled)
             {
               return;
             }
-            if(typeof response !== 'undefined' && response.length > 0)
+            if(!error && typeof response !== 'undefined' && response.length > 0)
             {
               var revResponse = response[0];
-              if(typeof revResponse.error !== undefined && revResponse.error)
+              if(typeof revResponse.error !== 'undefined' && revResponse.error)
               {
                 error = revResponse.error;
               }
             }
             if(error)
             {
-              logs.dir(error);
-              logs('error saving rev: ' + rev._rev + ' id : '  + rev._id + ' for seq: ' + seq);
+              //logs.dir(error);
+              //logs('error saving rev: ' + rev._rev + ' id : '  + rev._id + ' for seq: ' + seq);
               var e = new Error('error saving rev: ' + rev._rev + ' id : '  + rev._id + ' for seq: ' + seq);
               e.inner = error;
-              e.arguments = change.id;
               if(typeof error.status !== 'undefined' && error.status ===0)
               {
                 logs('returning non critical error');
@@ -297,20 +328,19 @@ var getAwaitingSaveProcessor = function(target){
                 logs('returning critical error');
                 e.critical = true;
               }
-              logs.error(error);
               cbk(e);
               return;
             }
             logs('successfully saved id:' + rev._id + " rev: " + rev._rev);
             cbk();
           }));
-        }
-        else
-        {
-          cbk();
-        }
-      }));
-    }, function(err){
+}
+else
+{
+  cbk();
+}
+}));
+}, function(err){
   if(state.cancelled)
   {
     return;

@@ -27,8 +27,9 @@ module.exports = function(processItem){
         }
         if(error)
         {
-          log('error processing seq: ' + seq);
-          cbk(error);
+          var e = new Error('error processing seq: ' + seq);
+          e.inner = error;
+          cbk(e);
           return;
         }
         log('done ' + seq);

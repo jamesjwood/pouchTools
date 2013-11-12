@@ -34,10 +34,9 @@ var getAwaitingNotifyProcessor = function(writeCheckpoint, target_at_seq, checkp
 };
 
 var setupQueues = function(queues, that, checkpointDB, id, hideCheckpoints, log){
-  assert.ok(queues);
-  assert.ok(that);
-  assert.ok(checkpointDB);
-  assert.ok(log);
+  assert.ok(queues, 'must have queues');
+  assert.ok(that, 'must have that');
+  assert.ok(log, 'must have log');
 
   log('queues length: ' + queues.length);
   if(queues.length ===0)
@@ -69,6 +68,12 @@ var setupQueues = function(queues, that, checkpointDB, id, hideCheckpoints, log)
 var fetchCheckpoint = function(checkpointDB, id, hideCheckpoints, log, callback) {
   log('getting checkpoint');
 
+  if(!checkpointDB)
+  {
+    callback(null, 0);
+    return;
+  }
+
   var cid = id;
   if(hideCheckpoints)
   {
@@ -76,7 +81,7 @@ var fetchCheckpoint = function(checkpointDB, id, hideCheckpoints, log, callback)
   }
 
 
-  retryHTTP(checkpointDB.get)(cid, function(err, doc) {
+  retryHTTP(checkpointDB.get, log.wrap('retryHTTP'))(cid, function(err, doc) {
     if (err && err.status === 404) {
       log('could not get checkpoint with id: ' + cid);
       callback(null, 0);
@@ -88,7 +93,11 @@ var fetchCheckpoint = function(checkpointDB, id, hideCheckpoints, log, callback)
 };
 
 var writeCheckpoint = function(checkpointDB, id, seq, hideCheckpoints, log, callback) {
-  assert.ok(checkpointDB, 'must have a checkpointdb');
+  if(!checkpointDB)
+  {
+    callback();
+    return;
+  }
   assert.ok(id, 'must have a id');
   assert.ok(seq, 'must have a seq');
   var check = {
@@ -100,7 +109,7 @@ var writeCheckpoint = function(checkpointDB, id, seq, hideCheckpoints, log, call
     check._id = '_local/' + check._id;
   }
   log('checking for existing checkpoint: ' + seq);
-  retryHTTP(checkpointDB.get)(check._id, function(err, doc) {
+  retryHTTP(checkpointDB.get, log.wrap('retryHTTP'))(check._id, function(err, doc) {
     if (doc && doc._rev) {
       check._rev = doc._rev;
       log('existing checkpoint at : ' + doc.last_seq);
@@ -114,7 +123,7 @@ var writeCheckpoint = function(checkpointDB, id, seq, hideCheckpoints, log, call
     {
       log('no existing checkpoint');
     }
-    retryHTTP(checkpointDB.put)(check, function(err, doc) {
+    retryHTTP(checkpointDB.put, log.wrap('retryHTTP'))(check, function(err, doc) {
       log('wrote checkpoint: ' + seq);
       callback();
     });
@@ -123,13 +132,13 @@ var writeCheckpoint = function(checkpointDB, id, seq, hideCheckpoints, log, call
 
 module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
 {
-  assert.ok(id);
-  assert.ok(srcDB);
-  assert.ok(checkpointDB);
-  assert.ok(queues);
-  assert.ok(opts);
-  assert.ok(initLog);
+  initLog('creating service');
+  assert.ok(id, 'must have id');
+  assert.ok(srcDB, 'must have srcDB');
+  assert.ok(queues, 'must have queues');
+  assert.ok(initLog, 'must have initLog');
 
+  opts = opts || {};
   var retries = opts.retries || 0;
   opts.filter = opts.filter || null;
   opts.reset = opts.reset || false;
@@ -155,14 +164,13 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
     }
     catch(error)
     {
-      console.log('Error emitting');
-      console.error(error);
+      initLog.error(error,'Whilst trying to emit');
     }
   };
 
   var initialReplicateComplete = function(seq){
     log('initialComplete');
-    that.sEmit('initialReplicateComplete', seq);
+    that.sEmit('initialComplete', seq);
   };
 
   var upToDate = function(seq){
@@ -171,7 +179,6 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
   };
 
   var setupComplete = function(error){
-    log('setupComplete');
     if(error)
     {
       if(retries !== 0)
@@ -216,7 +223,11 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
       return;
     }
     log('getting sourceDB info');
-    srcDB.info(utils.cb(setupComplete, function(info){
+    retryHTTP(srcDB.info, log.wrap('retryHTTP'))(utils.cb(setupComplete, function(info){
+      if(that.cancelled)
+      {
+          return;
+      }
       that.source_seq = info.update_seq;
       log('sourceDB at ' + that.source_seq);
       log('gettting checkpoint');
@@ -237,7 +248,7 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
 
 
         that.changeDone = function(seq){
-          assert.ok(seq);
+          assert.ok(seq, 'must have a seq');
           log('change done: ' + seq);
           if(that.cancelled === true)
           {
@@ -282,9 +293,9 @@ module.exports  = function (id, srcDB, checkpointDB, queues, opts, initLog)
         };
 
         var repOpts = {
+          conflicts: true,
           continuous: opts.continuous,
           since: that.target_at_seq,
-          style: 'all_docs',
           onChange: incomingChange,
           include_docs: true
         };

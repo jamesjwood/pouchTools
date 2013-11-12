@@ -172,8 +172,8 @@ module.exports = function(name, url, opts, log){
 		replicator.on('upToDate', function(){
 			that.emit(opOrDown + 'UpToDate');
 		});
-		replicator.on('initialReplicateComplete', function(){
-			that.emit(opOrDown + 'InitialReplicateComplete');
+		replicator.on('initialComplete', function(){
+			that.emit(opOrDown + 'InitialComplete');
 		});
 	};
 
@@ -206,7 +206,7 @@ module.exports = function(name, url, opts, log){
 			var downReplicator = replicator(serverDB, localDB, repOpts, rlog.wrap('init down replicator'));
 			setReplicator('down', downReplicator);
 
-			downReplicator.on('initialReplicateComplete',  function(){
+			downReplicator.on('initialComplete',  function(){
 				setActiveDB(localDB, 'local');
 				if(waitForInitialReplicate)
 				{

@@ -64,8 +64,9 @@ module.exports =function(processor, retryInterval, name){
       if(error)
       {
         setOffline(true);
-        log('error processing queue: '+ error.message);
-        log.error(error);
+        var e = new Error('error processing queue: '+ error.message);
+        e.inner = error;
+        log.error(e);
         that.cancel();
         return;
       }

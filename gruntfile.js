@@ -2,16 +2,20 @@
 
 var utils = require('utils');
 
+var getWatchers = require('getwatchers');
 
 module.exports = function(grunt) {
   "use strict";
   // Project configuration.
   grunt.initConfig({
-    watch: {
-      options: {
-        interrupt: true,
-      files: ['index.js', 'test.js', 'src/*.js', 'test/*.js'],
-      tasks: ['test']
+   watch: {
+      js: {
+        options: {
+          debounceDelay: 5000,
+          interrupt: true
+        },
+        files: getWatchers(),
+        tasks: ['default']
       }
     },
     jshint: {
@@ -89,8 +93,14 @@ module.exports = function(grunt) {
         browsers: ['Firefox']
       }
     },
+    bump: {
+        options: {},
+        files: [ 'package.json']
+    }
   });
 
+
+require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
 
 grunt.registerTask('bundleForge', function(){
   /* Bundle and minify Forge RSA and dependencies. */
@@ -135,14 +145,9 @@ grunt.registerTask('bundleForge', function(){
 
   console.log('RSA bundle written to: ' + bundle);
 });
-grunt.loadNpmTasks('grunt-shell');
-grunt.loadNpmTasks('grunt-simple-mocha');
-grunt.loadNpmTasks('grunt-karma');
-grunt.loadNpmTasks('grunt-contrib-watch');
-grunt.loadNpmTasks('grunt-contrib-jshint');
 
 grunt.registerTask('install', ['shell:makeLib', 'shell:browserifyValidator']);
-grunt.registerTask('default', ['jshint']);
+grunt.registerTask('default', ['jshint', 'bump']);
 grunt.registerTask('test', ['default', 'shell:makeStage', 'simplemocha', 'shell:browserify', 'karma:local']);
 
 };

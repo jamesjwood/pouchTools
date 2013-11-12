@@ -47,7 +47,9 @@ describe('offlinePouch', function () {
     async.forEachSeries(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], function(name, cbk){
 
       pouch.destroy(serverURL + '/test_offlinepouch_' + name, function(error, body){
-        cbk();
+        pouch.destroy(rootDir + 'test_offlinepouch_' + name, function(error2, body2){
+          cbk();
+        });
       });
     }, function(error){
       done(error);
