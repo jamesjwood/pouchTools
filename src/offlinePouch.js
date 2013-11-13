@@ -271,7 +271,7 @@ module.exports.getServerDb = function(url, retries, retryDelay, log, callback){
 	utils.safe(callback, function(){
 		var ret  = retries;
 		log('pouch get db: ' + url);
-		retryHTTP(pouch, log.wrap('retryHTTP'))(url, utils.cb(callback, function(db){
+		retryHTTP(pouch, log.wrap('retryHTTP'), {retryErrors: ['404']})(url, utils.cb(callback, function(db){
 			log('pouch found');
 			callback(null, db);
 		}));

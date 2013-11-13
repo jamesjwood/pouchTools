@@ -76,9 +76,19 @@ var getAwaitingDiffProcessor = function(filter, target, source){
       var cnhid = cng.id;
       var rev = cng.rev;
       var doc = cng.doc;
+
       assert.ok(cng, 'change');
       assert.ok(cnhid, 'id');
       processing[seq] = cng;
+
+      if(typeof filter !== 'undefined' && filter)
+      {
+        if(filter(doc) === false)
+        {
+          cbk();
+          return;
+        }
+      }
       retryHTTP(source.get, log.wrap('retryHTTP'))(cnhid, {revs:true, rev: doc._rev}, utils.cb(cbk, function(doc){
         var revisions = doc._revisions.ids;
         var i = 0;
@@ -135,14 +145,6 @@ var getAwaitingDiffProcessor = function(filter, target, source){
           {
             payload.missing = [];
           }
-          if(change.id === 'list_d384db49-f58c-4a96-9b79-f9d6a446cc35')
-          {
-            console.log("CHANGE FOUND:" + change.id);
-            console.dir(payload.missing);
-            console.log("DIFF");
-            console.dir(diff);
-          }
-
           delete queue[seq];
           itemProcessed(seq, payload);
         });
@@ -233,13 +235,7 @@ var checkExists = function(target, id, rev, log, callback)
   retryHTTP(target.get, log.wrap('retryHTTP'))(id, {rev: rev}, utils.safe(callback, function(error, doc){
     if(error)
     {
-      if(typeof error.status !=='undefined' && error.status === 0)
-      {
-        log('connection error');
-        error.critical = false;
-        callback(error);
-      }
-      else if (error.error === 'not_found')
+      if (typeof error.status !=='undefined' && error.status === 404)
       {
         log('missing');
         callback(null, false);
