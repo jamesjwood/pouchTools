@@ -9,12 +9,20 @@ module.exports = function(grunt) {
   // Project configuration.
   grunt.initConfig({
    watch: {
-      js: {
+      dependencies: {
         options: {
           debounceDelay: 5000,
           interrupt: true
         },
         files: getWatchers(pkg),
+        tasks: ['test']
+      },  
+      local: {
+        options: {
+          debounceDelay: 5000,
+          interrupt: true
+        },
+        files: ['*.js','src/**/*.js', 'test/**/*.js'],
         tasks: ['default']
       }
     },
@@ -104,7 +112,7 @@ module.exports = function(grunt) {
       {
         configFile: 'karma.conf.js',
         singleRun: true,
-        browsers: ['Firefox']
+        browsers: ['Safari']
       }
     },
     bump: {
@@ -161,7 +169,7 @@ grunt.registerTask('bundleForge', function(){
 });
 
 grunt.registerTask('install', ['shell:makeLib', 'shell:browserifyValidator']);
-grunt.registerTask('default', ['jshint', 'bump']);
-grunt.registerTask('test', ['default', 'shell:makeStage', 'simplemocha', 'shell:browserify', 'karma:local']);
+grunt.registerTask('test', ['jshint', 'shell:makeStage', 'simplemocha', 'shell:browserify', 'karma:local']);
+grunt.registerTask('default', ['test', 'bump']);
 
 };
