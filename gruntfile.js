@@ -62,41 +62,31 @@ module.exports = function(grunt) {
       browserify:{
         command: 'node ./node_modules/browserify/bin/cmd.js  --debug -o ./stage/test.js -i domain -i loggly -i ga -e ./test.js;',
         options:{
-          stdout: true,
-          stderr: true,
           failOnError: true
         }
       }
        ,
       browserifyValidator:{
-        command: 'node ./node_modules/browserify/bin/cmd.js  -o ./bin/validator.js -i domain -r ./src/validateDoc.js;',
+        command: 'node ./node_modules/browserify/bin/cmd.js --debug -o ./bin/validator.js -i domain -r ./src/validateDoc.js;',
         options:{
-          stdout: true,
-          stderr: true,
           failOnError: true
         }
       },
       buildPouchDBClient:{
         command: 'cd node_modules/pouchdb; npm install; grunt;',
         options:{
-          stdout: true,
-          stderr: true,
           failOnError: true
         }
       },
       copyPouch:{
         command: 'cp -av node_modules/pouchdb/dist/pouchdb-nightly.min.js lib/pouch.min.js; cp -av node_modules/pouchdb/dist/pouchdb-nightly.js lib/pouch.js;',
         options:{
-          stdout: true,
-          stderr: true,
           failOnError: true
         }
       },
       copyMocha:{
         command: 'cp -av node_modules/grunt-simple-mocha/node_modules/mocha/mocha.js lib/mocha.js; cp -av node_modules/grunt-simple-mocha/node_modules/mocha/mocha.css lib/mocha.css',
         options:{
-          stdout: true,
-          stderr: true,
           failOnError: true
         }
       }
@@ -168,7 +158,7 @@ grunt.registerTask('bundleForge', function(){
   console.log('RSA bundle written to: ' + bundle);
 });
 
-grunt.registerTask('install', ['shell:makeLib', 'shell:browserifyValidator']);
+grunt.registerTask('install', ['shell:makeBin', 'shell:browserifyValidator']);
 grunt.registerTask('test', ['jshint', 'shell:makeStage', 'simplemocha', 'shell:browserify', 'karma:local']);
 grunt.registerTask('default', ['test', 'bump']);
 

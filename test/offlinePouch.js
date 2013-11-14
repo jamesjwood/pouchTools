@@ -35,7 +35,7 @@ var masterLog = utils.log().wrap('offlinePouch');
 
 var lib = require('../src/offlinePouch.js');
 
-var serverURL = 'http://admin:password@localhost:5984';
+var serverURL = 'http://admin:password@localhost:5985';
 var noServerURL = 'http://noserver/nodb';
 
 
@@ -60,11 +60,6 @@ describe('offlinePouch', function () {
   
 
   before(function(done){
-    cleanDB(function(){
-      done();
-    });
-  });
-  after(function(done){
     cleanDB(function(){
       done();
     });

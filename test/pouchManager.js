@@ -19,7 +19,7 @@ utils.log.emitterToLog(pouchManager, masterLog.wrap('the manager'));
 
 var pouch = require('pouchdb');
 
-var serverURL = 'http://admin:password@localhost:5984';
+var serverURL = 'http://admin:password@localhost:5985';
 
 
 

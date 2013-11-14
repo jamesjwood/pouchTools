@@ -24,7 +24,7 @@
 
  var async = require('async');
 
- var remoteDbUrl = 'http://admin:password@localhost:5984/';
+ var remoteDbUrl = 'http://admin:password@localhost:5985/';
 
  var localDbUrl;
 

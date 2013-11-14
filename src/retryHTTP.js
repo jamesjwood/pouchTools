@@ -1,6 +1,6 @@
 //Function that retries on failed HTTP requests
-var assert = require('assert');
 
+var is = require("is-js");
 
 var errorCodes = [0, 400, 401, 402, 408, 407, 500, 501, 503, 504, 505];
 
@@ -16,9 +16,14 @@ var isError = function(status, codes){
 };
 
 module.exports = function(toWrap, log, opts){
-	assert.ok(toWrap, 'toWrap');
-	assert.ok(log,'log');
+	is.fn(toWrap);
+	is.fn(log);
+
 	opts = opts || {};
+	if(typeof opts.retryErrors)
+	{
+		is.array(opts.retryErrors);
+	}
 	var timeout = opts.timeout || 5000;
 	var retries = opts.retries || -1;
 	var codes = errorCodes.slice(0);
@@ -26,6 +31,10 @@ module.exports = function(toWrap, log, opts){
 	{
 		codes = codes.concat(opts.retryErrors);
 	}
+
+	codes.map(function(code){
+		is.number(code);
+	});
 
 	var that = function(){
 		var argsArray = [];
