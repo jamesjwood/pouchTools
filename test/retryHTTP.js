@@ -112,7 +112,7 @@ describe('retryHTTP', function () {
 
 		var myF = lib(function(cbk){
 			cbk({status:12});
-		}, testDelay);
+		}, mylog.wrap('retryHTTP'), {timeout: testDelay});
 
 		myF(utils.safe(onDone, function(err){
 			assert.ok(err);

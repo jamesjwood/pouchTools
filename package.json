@@ -1,12 +1,12 @@
 {
     "name": "pouchTools",
-    "version": "0.0.0-67",
+    "version": "0.0.0-70",
     "description": "tools for replicating and securing pouch/couch db",
     "main": "index.js",
     "scripts": {
         "test": "node node_modules/grunt-cli/bin/grunt test",
         "install": "grunt install",
-        "link": "rm -R node_modules; npm link getWatchers; npm link utils;npm link jsonCrypto;npm link;npm link getWatchers; npm link utils;npm link jsonCrypto; rm -rf bin; mkdir bin; node ./node_modules/browserify/bin/cmd.js  -o ./bin/validator.js -i domain -r ./src/validateDoc.js; grunt install"
+        "link": "rm -R node_modules; npm link; npm link getWatchers; npm link utils;npm link jsonCrypto; grunt install"
     },
     "repository": {
         "type": "git",
@@ -35,9 +35,7 @@
         "jsonCrypto": "git://github.com/jamesjwood/jsonCrypto.git",
         "async": "0.2.x",
         "pouchdb": "git://github.com/daleharvey/pouchdb.git",
-        "browserify": "2.34.x",
-        "assert-type": "0.1.x",
-        "is-js": "~0.1.1"
+        "browserify": "2.34.x"
     },
     "browser": {
         "REQUIRE_PATH": false

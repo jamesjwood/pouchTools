@@ -67,7 +67,7 @@ that.cancel = function(){
 	that.emit('cancelled');
 };
 
-that.wipeLocal = function(slog, cbk){
+that.wipeLocal = utils.f(function(slog, cbk){
 	that.cancel();
 
 	async.forEachSeries(Object.keys(that.databases), function(name, cb){
@@ -79,7 +79,7 @@ that.wipeLocal = function(slog, cbk){
 			that.newDatabase('services', 'services', {localOnly: true}, log.wrap('newDatabase, services'));	
 			cbk();
 	}));
-};
+});
 
 
 //that.on('error', function(){

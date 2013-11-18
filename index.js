@@ -7,10 +7,9 @@ module.exports.processorQueue = require('./src/processorQueue.js');
 module.exports.processorQueueStack = require('./src/processorQueueStack.js');
 module.exports.pouchManager= require('./src/pouchManager.js');
 module.exports.retryHTTP= require('./src/retryHTTP.js');
-
+module.exports.pouch = require('pouchdb');
 
 if(typeof window ==='undefined')
 {
 	module.exports.designDoc = require('./src/designDoc.js');
 }
-

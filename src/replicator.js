@@ -36,9 +36,9 @@ module.exports  = function (src, target, opts, initLog){
   var filter = opts.filter || null;
   var repId = genReplicationId(src, target, filter, initLog.wrap('genReplicationId'));
 
-  var awaitingDiff = processorQueue(getAwaitingDiffProcessor(filter, target, src), 5000, 'diff');
-  var awaitingGet = processorQueue(getAwaitingGetProcessor(src), 5000, 'get');
-  var awaitingSave = processorQueue(getAwaitingSaveProcessor(target), 5000, 'save');
+  var awaitingDiff = processorQueue(getAwaitingDiffProcessor(filter, target, src), {retryInterval: 0, name: 'diff'});
+  var awaitingGet = processorQueue(getAwaitingGetProcessor(src), {retryInterval: 0, name: 'get'});
+  var awaitingSave = processorQueue(getAwaitingSaveProcessor(target), {retryInterval: 0, name: 'save'});
 
 
   if(opts.checkpointDb)
@@ -85,6 +85,7 @@ var getAwaitingDiffProcessor = function(filter, target, source){
       {
         if(filter(doc) === false)
         {
+          log('excluding doc: ' + doc._id);
           cbk();
           return;
         }
@@ -99,7 +100,7 @@ var getAwaitingDiffProcessor = function(filter, target, source){
         cbk();
       }));
 
-    }, function(error){
+    }, utils.safe(callback, function(error){
       if(error)
       {
         var e = new Error('Error getting doc with revisions');
@@ -107,8 +108,10 @@ var getAwaitingDiffProcessor = function(filter, target, source){
         callback(e);
         return;
       }
-      log('getting diffs from target');
-      retryHTTP(target.revsDiff, log.wrap('retryHTTP'))(diff, utils.safe.catchSyncronousErrors(callback, function(error, diffs){
+
+
+      var gotDiffs = utils.safe.catchSyncronousErrors(callback, function(error, diffs){
+        log('diffs returned');
         if(error)
         {
           log('could not process awaiting diffs for ' + JSON.stringify(diff));
@@ -129,6 +132,7 @@ var getAwaitingDiffProcessor = function(filter, target, source){
           callback(e);
           return;
         }
+        log('processinf returned diffs');
         Object.keys(processing).map(function(seq){
           var change = queue[seq];
           assert.ok(change, 'There shoud be a change');
@@ -149,8 +153,23 @@ var getAwaitingDiffProcessor = function(filter, target, source){
           itemProcessed(seq, payload);
         });
         callback();
-      }));
-});
+      });
+
+      var c = 0;
+      for(var k in diff)
+      {
+        c++;
+      }
+      if(c===0)
+      {
+        log('no records to diff');
+        gotDiffs(null, {});
+        return;
+      }
+
+      log('getting diffs from target');
+      retryHTTP(target.revsDiff, log.wrap('retryHTTP'))(diff, gotDiffs);
+}));
 
 
 

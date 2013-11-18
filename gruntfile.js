@@ -38,7 +38,7 @@ module.exports = function(grunt) {
         ui: 'bdd',
         reporter: 'tap'
       },
-      all: { src: ['test.js'] }
+      all: { src: ['test/*.js'] }
     },
     shell: {
       makeStage: {
@@ -48,8 +48,7 @@ module.exports = function(grunt) {
           stderr: true,
           failOnError: true
         }
-      }
-      ,
+      },
       makeBin: {
         command: 'rm -rf bin; mkdir bin',
         options:{
@@ -57,15 +56,13 @@ module.exports = function(grunt) {
           stderr: true,
           failOnError: true
         }
-      }
-      ,
+      },
       browserify:{
         command: 'node ./node_modules/browserify/bin/cmd.js  --debug -o ./stage/test.js -i domain -i loggly -i ga -e ./test.js;',
         options:{
           failOnError: true
         }
-      }
-       ,
+      },
       browserifyValidator:{
         command: 'node ./node_modules/browserify/bin/cmd.js --debug -o ./bin/validator.js -i domain -r ./src/validateDoc.js;',
         options:{
@@ -96,7 +93,7 @@ module.exports = function(grunt) {
       local: {
         configFile: 'karma.conf.js',
         singleRun: true,
-        browsers: ['Safari'] //, 'Firefox', 'Safari', 'Opera'
+        browsers: ['Safari']
       },
       jenkins:
       {

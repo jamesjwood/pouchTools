@@ -115,7 +115,7 @@ describe('processorQueue', function () {
     var queueProcessor = processor(function(seq, pay, state,lg,cbk){
       mylog('processing ' + seq);
       assert.equal(j.toString(), seq);
-      if(j === 200)
+      if(j >= 200)
       {
         onDone();
         return;
@@ -123,7 +123,7 @@ describe('processorQueue', function () {
       else
       {
         j++;
-        setTimeout(cbk, 5);
+        setTimeout(cbk, 10);
       }
     });
 
@@ -138,15 +138,15 @@ describe('processorQueue', function () {
       queue.enqueue(i.toString(), {id: i});
     }
 
-    var addItem = function(){
+    var intervalID = setInterval(function(){
       if(i>200)
       {
+        clearInterval(intervalID);
         return;
       }
+      mylog('adding item ' + i.toString());
       queue.enqueue(i.toString(), {id: i});
       i++;
-      setTimeout(addItem, 3);
-    };
-    addItem();
+    }, 10);
   });
 });

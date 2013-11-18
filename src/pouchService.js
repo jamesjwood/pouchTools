@@ -43,7 +43,7 @@ var setupQueues = function(queues, that, checkpointDB, id, hideCheckpoints, log)
   {
     throw new Error('you must pass a non zero length queues variable');
   }
-  var notifyQueue = processorQueue(getAwaitingNotifyProcessor(writeCheckpoint, that.target_at_seq, checkpointDB, id, hideCheckpoints), 5000, 'Notification');
+  var notifyQueue = processorQueue(getAwaitingNotifyProcessor(writeCheckpoint, that.target_at_seq, checkpointDB, id, hideCheckpoints), {retryInterval: 0, name: 'Notification'});
 
 
   notifyQueue.on('itemProcessed', function(seq){

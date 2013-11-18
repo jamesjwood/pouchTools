@@ -4,12 +4,14 @@ var jsonCrypto = require('jsonCrypto');
 var async = require('async');
 var assert = require('assert');
 
-module.exports =function(processor, retryInterval, name){
+module.exports =function(processor, opts){
   var incomingQueue = {};
   var processingQueue= {};
+  opts = opts || {};
 
+  var retryInterval = opts.retryInterval || 0;
+  var name = opts.name;
 
-  retryInterval = retryInterval || 500;
 
   var that = new events.EventEmitter();
   that.name = name;
@@ -74,25 +76,11 @@ module.exports =function(processor, retryInterval, name){
       
       if(totalCount>0)
       {
-        log('still processing to do');
-        if(processingCount>0)
-        {
-          log('sheduling retry in 5 seconds');
-          setTimeout(function(){
-            processing = false;
-            that.checkToProcess();
-          }, 5000);
-        }
-        else
-        {
           log('new items added, processing immediately');
           setTimeout(function(){
             processing = false;
             that.checkToProcess();
-          }, 0);
-          
-        }
-
+          }, opts.retryInterval);
       }
       else
       {

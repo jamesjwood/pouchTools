@@ -57,7 +57,7 @@ module.exports = function(name, url, opts, log){
 	that.setupComplete = false;
 
 
-	var mapped = ['put', 'post', 'get', 'allDocs', 'changes', 'bulkDocs', 'info', 'view', 'query', 'remove'];
+	var mapped = ['put', 'post', 'get', 'allDocs', 'changes', 'bulkDocs', 'info', 'query', 'remove'];
 
 	mapped.map(function(name){
 		that[name] = function(){
@@ -267,7 +267,7 @@ module.exports = function(name, url, opts, log){
 };
 
 
-module.exports.getServerDb = function(url, retries, retryDelay, log, callback){
+module.exports.getServerDb = utils.f(function getServerDb(url, retries, retryDelay, log, callback){
 	utils.safe(callback, function(){
 		var ret  = retries;
 		log('pouch get db: ' + url);
@@ -276,9 +276,9 @@ module.exports.getServerDb = function(url, retries, retryDelay, log, callback){
 			callback(null, db);
 		}));
 	})();
-};
+});
 
-module.exports.getLocalDb = function(pouchdb, name, wipeLocal, log, callback){
+module.exports.getLocalDb = utils.f(function getLocalDb(pouchdb, name, wipeLocal, log, callback){
 	var localDBName = module.exports.getLocalDBName(name);
 	log('creating localdb at:' + localDBName);
 	utils.safe(callback, function(){
@@ -300,7 +300,8 @@ module.exports.getLocalDb = function(pouchdb, name, wipeLocal, log, callback){
 		}
 
 	})();
-};
+});
+
 module.exports.getLocalDBName = function(name){
 	var localDBName;
 

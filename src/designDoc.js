@@ -15,11 +15,9 @@ var path = require('path');
 
 
 
-module.exports = function(typeSpecs, log, callback){
-	assert.ok(typeSpecs);
-	assert.ok(log);
-	assert.ok(callback);
-
+module.exports = utils.f(function(typeSpecs, log, callback){
+	utils.is.object(typeSpecs);
+	utils.is.function(log);
 
 	var realtivePath =  './src/validateDoc.js';
 
@@ -62,4 +60,4 @@ module.exports = function(typeSpecs, log, callback){
 		};
 
 		callback(null, designDoc);
-};
+});
