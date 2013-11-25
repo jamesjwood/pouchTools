@@ -33,3 +33,5 @@ stage/
 lib-cov/
 bin/
 *.dump
+
+*.dump
