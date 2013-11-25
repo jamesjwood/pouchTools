@@ -85,33 +85,45 @@ module.exports = function(name, url, opts, log){
 		};
 	});
 
-	that.close = function(){
+	that.close = function(callback){
 		if(that.replicator)
 		{
 			log('cancelling replicator');
 			that.replicator.cancel();
 		}
+		var toClose = [];
 		if(serverDB)
 		{
 			log('closing server db');
-			serverDB.close();
+			toClose.push(serverDB);
 		}
 		if(localDB)
 		{
 			log('closing local db');
-			localDB.close();
+			toClose.push(localDB);
 		}
-		that.removeAllListeners();
+		async.forEach(toClose, function(db, cbk){
+			db.close(cbk);
+		}, utils.cb(callback, function(){
+			that.removeAllListeners();
+			callback();
+		}));
+		
 	};
+
+
 
 	that.wipeLocal = function(slog, cbk){
 		slog('wipeLocal');
-		that.close();
-		if(module.exports.offlineSupported() && !opts.serverOnly)
-		{
-			var localName =	module.exports.getLocalDBName(name);
-			pouch.destroy(localName, cbk);
-		}
+		that.close(utils.cb(cbk, function(){
+			if(module.exports.offlineSupported() && !opts.serverOnly)
+			{
+				var localName =	module.exports.getLocalDBName(name);
+				pouch.destroy(localName, cbk);
+				return;
+			}
+			cbk();
+		}));
 	};
 
 
@@ -290,7 +302,8 @@ module.exports.getLocalDb = utils.f(function getLocalDb(pouchdb, name, wipeLocal
 		};
 		if(wipeLocal)
 		{
-			pouchdb.destroy(localDBName, utils.safe.catchSyncronousErrors(callback, function(){
+			log('wiping existing if exists');
+			pouchdb.destroy(localDBName, utils.safe(callback, function(err){
 				openDB();
 			}));
 		}

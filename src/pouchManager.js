@@ -5,6 +5,7 @@ var events= require('events');
 var async= require('async');
 var assert = require('assert');
 
+var is = utils.is;
 var that =  new events.EventEmitter();
 var log = utils.log(that);
 var databasesLog = log.wrap('databases');
@@ -23,6 +24,10 @@ that.newDatabase = function(name, url, opts, setupLog){
 	
 	opts = opts || {};
 	opts.checkpointDb = that.databases.services;
+	if(that.databases[name])
+	{
+		throw new Error('database aready opened');
+	}
 	var database = offlinePouch(name, url, opts, setupLog);
 	that.databases[name] = database;
 	utils.log.emitterToLog(database, databasesLog.wrap(name));
@@ -30,56 +35,66 @@ that.newDatabase = function(name, url, opts, setupLog){
 	return database;
 };
 that.newService =  function(name, databaseName, queues, opts, setupLog){
-	
-	that.newDatabase('services', 'services', {localOnly: true}, log.wrap('newDatabase, services'));
 	setupLog('creating service: '+ name);
-	assert.ok(name);
-	assert.ok(queues);
+	is.string(name);
+	is.string(databaseName);
+	is.array(queues);
+	is.function(setupLog);
+	opts = opts || {};
+
+	if(!that.databases.services)
+	{
+		log('services db not created, creating..');
+		that.newDatabase('services', 'services', {localOnly: true}, log.wrap('newDatabase, services'));	
+	}
+
 	assert.ok(that.databases[databaseName], 'there was no database with the name: ' + databaseName);
-	assert.ok(setupLog);
 	opts = opts || {};
 	opts.hideCheckpoints = false;
 
+	if(that.services[name])
+	{
+		throw new Error('service aleady started');
+	}
 	var service = pouchService(name, that.databases[databaseName], that.databases.services, queues, opts, setupLog);
 	that.services[name] = service;
 	that.emit('newService', name, service);
-	service.on('error', function(){
-		alert('SERVICE ERROR');
-	});
 	utils.log.emitterToLog(service, servicesLog.wrap(name));
 	return service;
 };
 
 that.cancelled = false;
 
-that.cancel = function(){
+that.close = utils.f(function close(callback){
 	log('cancelling');
 	that.cancelled = true;
 	for(var sname in that.services)
 	{
 		that.services[sname].cancel();
 	}
-	for(var dname in that.databases)
-	{
-		that.databases[dname].close();
-	}
-	log('cancelled');
-	that.emit('cancelled');
-};
-
-that.wipeLocal = utils.f(function(slog, cbk){
-	that.cancel();
-
-	async.forEachSeries(Object.keys(that.databases), function(name, cb){
-		that.databases[name].wipeLocal(slog, cb);
-	}, utils.cb(cbk, function(){
-			that.databases = {};
-			that.services = {};
-			that.cancelled = false;
-			that.newDatabase('services', 'services', {localOnly: true}, log.wrap('newDatabase, services'));	
-			cbk();
+	async.forEach(that.databases, function(dname, cbk){
+		that.databases[dname].close(cbk);
+	}, utils.cb(callback, function(){
+		log('cancelled');
+		that.emit('cancelled');
+		callback();
 	}));
-});
+}, 'close');
+
+that.wipeLocal = utils.f(function wipeLocal(slog, cbk){
+	that.close(utils.cb(cbk, function(){
+		async.forEachSeries(Object.keys(that.databases), function(name, cb){
+			slog('wiping: ' + name);
+			that.databases[name].wipeLocal(slog.wrap('wipe ' + name), cb);
+		}, utils.cb(cbk, function(){
+				slog('all wiped');
+				that.databases = {};
+				that.services = {};
+				that.cancelled = false;
+				cbk();
+		}));
+	}));
+}, 'wipeLocal');
 
 
 //that.on('error', function(){

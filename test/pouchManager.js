@@ -27,6 +27,13 @@ describe('data', function () {
 	'use strict';
 	it('should be able to add a database', function(done){
 		var log  = masterLog.wrap('1');
+		var onDone = function(err){
+			if(err)
+			{
+				log.error(err);
+			}
+			done(err);
+		};
 
 		var queue = processorQueue(processor(function(id, item, log, callback){
 			callback(null, id, item);
@@ -38,7 +45,7 @@ describe('data', function () {
 			var testService = pouchManager.newService('test', 'test' , [queue], {}, log.wrap('new Service'));
 			assert.ok(pouchManager.services.test);
 			testService.on('setupComplete', function(){
-				done();
+				pouchManager.close(onDone);
 			});
 		});
 

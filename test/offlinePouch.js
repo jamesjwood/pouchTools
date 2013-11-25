@@ -1,11 +1,3 @@
-/**
- * Created with JetBrains WebStorm.
- * User: jameswood
- * Date: 31/10/2012
- * Time: 09:42
- * To change this template use File | Settings | File Templates.
- */
-
 /*jslint node: true */
 /*global describe */
 /*global it */
@@ -102,8 +94,7 @@ describe('offlinePouch', function () {
 
     var offlinePouch = lib('test_offlinepouch_4', serverURL + '/test_offlinepouch_4',{retryDelay: 2}, log.wrap('creating offline pouch'));
     offlinePouch.on('setupComplete', function(){
-      offlinePouch.close();
-      onDone();
+      offlinePouch.close(onDone);
     });
   });
 
@@ -116,6 +107,7 @@ describe('offlinePouch', function () {
       }
       done(error);
     };
+     this.timeout(10000);
 
     lib.offlineSupported = function(){
       return true;
@@ -123,21 +115,25 @@ describe('offlinePouch', function () {
     pouch.destroy(serverURL + '/test_offlinepouch_5', utils.safe(onDone, function(){
      pouch(serverURL + '/test_offlinepouch_5', utils.cb(onDone, function(serverDb){
       serverDb.put({_id: 'testdoc'}, utils.cb(onDone, function(){
-        serverDb.close();
-
-
-        var offlinePouchLog = log.wrap('offlinePouch');
-        var offlinePouch = lib('test_offlinepouch_5', serverURL + '/test_offlinepouch_5', {retryDelay: 2, waitForInitialReplicate: true}, log.wrap('creating offline pouch'));
+        serverDb.close(utils.cb(onDone, function(){
+          var offlinePouchLog = log.wrap('offlinePouch');
+          var offlinePouch = lib('test_offlinepouch_5', serverURL + '/test_offlinepouch_5', {retryDelay: 2, waitForInitialReplicate: true}, log.wrap('creating offline pouch'));
           offlinePouch.on('downUpToDate', function(){
-            offlinePouch.get('testdoc', utils.cb(onDone, function(doc){
-              assert.equal('testdoc', doc._id);
-              offlinePouch.wipeLocal(log.wrap('wipeLocal'), utils.cb(onDone, function(){
-                onDone();
+              offlinePouch.get('testdoc', utils.cb(onDone, function(doc){
+                assert.equal('testdoc', doc._id);
+                offlinePouch.wipeLocal(log.wrap('wipeLocal'), utils.cb(onDone, function(){
+                  var offlinePouch2 = lib('test_offlinepouch_5', serverURL + '/test_offlinepouch_5', {retryDelay: 2, waitForInitialReplicate: false}, log.wrap('creating offline pouch2'));
+                  log('getting test doc (should be deleted)');
+                  offlinePouch2.get('testdoc', utils.safe(onDone, function(error, doc){
+                    assert.ok(error);
+                    assert.equal(error.reason, 'missing');
+                    onDone();
+                  }));
+                }));
               }));
-            }));
-          });
-
-          utils.log.emitterToLog(offlinePouch, offlinePouchLog);
+            });
+            utils.log.emitterToLog(offlinePouch, offlinePouchLog);
+          }));
         }));
       })); 
     }));
