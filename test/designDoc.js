@@ -19,7 +19,7 @@ var jsonCrypto = require('jsonCrypto');
 
 
 var masterLog = utils.log().wrap('designDoc');
-var serverURL = 'http://admin:password@localhost:5984';
+var serverURL = 'http://admin:password@localhost:5985';
 
 
 
@@ -68,11 +68,10 @@ describe('designDoc', function () {
 			done();
 		});
 	});
-	after(function(done){
-		cleanDB(done);
-	});
 
 	it('1: should return a doc', function (done) {
+
+		this.timeout(10000);
 		assert.ok(rootCert, 'rootCert not returned');
 		assert.ok(signedUserCert);
 		var log = masterLog.wrap('1');
@@ -101,6 +100,8 @@ describe('designDoc', function () {
 	it('2: should check for type', function (done) {
 		var log = masterLog.wrap('2');
 
+	
+		this.timeout(10000);
 		var onDone = function(error){
 			if(error)
 			{
@@ -143,6 +144,7 @@ describe('designDoc', function () {
 	it('3: should check for signature', function (done) {
 		var log = masterLog.wrap('3');
 
+		this.timeout(10000);
 		var onDone = function(error){
 			if(error)
 			{
@@ -179,6 +181,7 @@ describe('designDoc', function () {
 
 	it('4: should check for valid type', function (done) {
 		var log = masterLog.wrap('4');
+		this.timeout(10000);
 
 		var onDone = function(error){
 			if(error)
@@ -220,6 +223,7 @@ describe('designDoc', function () {
 	it('5: should deny if user is not in contributors or editors', function (done) {
 		var log = masterLog.wrap('5');
 
+		this.timeout(10000);
 		var onDone = function(error){
 			if(error)
 			{
@@ -260,6 +264,7 @@ describe('designDoc', function () {
 	it('6: should allow if user is in contributors', function (done) {
 		var log = masterLog.wrap('6');
 
+		this.timeout(10000);
 		var onDone = function(error){
 			if(error)
 			{
@@ -298,6 +303,7 @@ describe('designDoc', function () {
 	it('7: should allow if user is in editors', function (done) {
 		var log = masterLog.wrap('7');
 
+		this.timeout(10000);
 		var onDone = function(error){
 			if(error)
 			{
@@ -340,6 +346,7 @@ describe('designDoc', function () {
 	it('8: should only allow updates to the contributor', function (done) {
 		var log = masterLog.wrap('8');
 
+		this.timeout(10000);
 		var onDone = function(error){
 			if(error)
 			{
@@ -389,6 +396,7 @@ describe('designDoc', function () {
 	it('9: should allow updates to contributors', function (done) {
 		var log = masterLog.wrap('9');
 
+		this.timeout(10000);
 		var onDone = function(error){
 			if(error)
 			{
@@ -434,6 +442,7 @@ describe('designDoc', function () {
 	it('10: should allow updates to editors', function (done) {
 		var log = masterLog.wrap('10');
 
+		this.timeout(10000);
 		var onDone = function(error){
 			if(error)
 			{
@@ -479,6 +488,7 @@ describe('designDoc', function () {
 	it('11: should allow user certificates', function (done) {
 		var log = masterLog.wrap('11');
 
+		this.timeout(10000);
 		var onDone = function(error){
 			if(error)
 			{
@@ -519,6 +529,7 @@ describe('designDoc', function () {
 	it('12: should check the doc size', function (done) {
 		var log = masterLog.wrap('12');
 
+		this.timeout(10000);
 		var onDone = function(error){
 			if(error)
 			{

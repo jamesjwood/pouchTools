@@ -8,6 +8,15 @@ module.exports = function(grunt) {
   "use strict";
   // Project configuration.
   grunt.initConfig({
+    pkg: grunt.file.readJSON('package.json'),
+    bumpup: {
+      options: {
+        updateProps: {
+          pkg: 'package.json'
+        }
+      },
+      file: 'package.json'
+    },
    watch: {
       dependencies: {
         options: {
@@ -36,9 +45,9 @@ module.exports = function(grunt) {
     simplemocha: {
       options: {
         ui: 'bdd',
-        reporter: 'tap'
+        reporter: 'min'
       },
-      all: { src: ['test/*.js'] }
+      all: { src: ['test.js'] }
     },
     shell: {
       makeStage: {
@@ -101,10 +110,6 @@ module.exports = function(grunt) {
         singleRun: true,
         browsers: ['Safari']
       }
-    },
-    bump: {
-        options: {},
-        files: [ 'package.json']
     }
   });
 
@@ -155,8 +160,9 @@ grunt.registerTask('bundleForge', function(){
   console.log('RSA bundle written to: ' + bundle);
 });
 
-grunt.registerTask('install', ['shell:makeBin', 'shell:browserifyValidator']);
-grunt.registerTask('test', ['jshint', 'shell:makeStage', 'simplemocha', 'shell:browserify', 'karma:local']);
-grunt.registerTask('default', ['test', 'bump']);
+grunt.registerTask('build', ['shell:makeBin', 'shell:browserifyValidator']);
+grunt.registerTask('test', ['build', 'jshint', 'shell:makeStage', 'simplemocha', 'shell:browserify', 'karma:local']);
+grunt.registerTask('development', ['build', 'bumpup:prerelease']);
+grunt.registerTask('production', ['build', 'bumpup:patch']);
 
 };
