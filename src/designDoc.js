@@ -16,6 +16,7 @@ var path = require('path');
 
 
 module.exports = utils.f(function(typeSpecs, log, callback){
+	log('design doc requested');
 	utils.is.object(typeSpecs);
 	utils.is.function(log);
 

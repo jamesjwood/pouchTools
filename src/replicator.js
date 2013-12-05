@@ -31,7 +31,6 @@ var genReplicationId = function(src, target, filter, log) {
   return src.id() + "-" +  target.id() + hashBuff.toString('hex');
 };
 
-
 module.exports  = function (src, target, opts, initLog){
   var filter = opts.filter || null;
   var repId = genReplicationId(src, target, filter, initLog.wrap('genReplicationId'));
