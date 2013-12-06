@@ -29,7 +29,8 @@
     "brfs": "0.0.x",
     "matchdep": "0.3.x",
     "getWatchers": "git://github.com/jamesjwood/getWatchers.git",
-    "grunt-bumpup": "~0.4.2"
+    "grunt-bumpup": "~0.4.2",
+    "grunt-jsbeautifier": "~0.2.3"
   },
   "dependencies": {
     "utils": "git://github.com/jamesjwood/utils.git",

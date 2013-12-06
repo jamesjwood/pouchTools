@@ -17,6 +17,17 @@ module.exports = function(grunt) {
       },
       file: 'package.json'
     },
+    jsbeautifier : {
+      run: {
+          src : ["src/**/*.js"]
+      },
+      test: {
+          src : ["src/**/*.js"],
+          options : {
+              mode:"VERIFY_ONLY"
+          }
+      }
+    },
    watch: {
       dependencies: {
         options: {
@@ -161,7 +172,7 @@ grunt.registerTask('bundleForge', function(){
 });
 
 grunt.registerTask('build', ['shell:makeBin', 'shell:browserifyValidator']);
-grunt.registerTask('test', ['build', 'jshint', 'shell:makeStage', 'simplemocha', 'shell:browserify', 'karma:local']);
+grunt.registerTask('test', ['build', 'jshint', 'jsbeautifier:test', 'shell:makeStage', 'simplemocha', 'shell:browserify', 'karma:local']);
 grunt.registerTask('development', ['build', 'bumpup:prerelease']);
 grunt.registerTask('production', ['build', 'bumpup:patch']);
 

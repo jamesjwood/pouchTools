@@ -36,7 +36,7 @@ describe('offlinePouch', function () {
   'use strict';
   var cleanDB = function(done){
 
-    async.forEachSeries(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], function(name, cbk){
+    async.forEachSeries(['1', '55', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], function(name, cbk){
 
       pouch.destroy(serverURL + '/test_offlinepouch_' + name, function(error, body){
         pouch.destroy(rootDir + 'test_offlinepouch_' + name, function(error2, body2){
@@ -55,26 +55,6 @@ describe('offlinePouch', function () {
     cleanDB(function(){
       done();
     });
-  });
-
-   it('3: getLocalDb', function (done) {
-    var log = masterLog.wrap('3');
-    var onDone = function(error){
-      if(error)
-      {
-        log.error(error);
-      }
-      done(error);
-    };
-
-     var fakePouch = function(url, cbk){
-      assert.equal(rootDir + 'test_offlinepouch_3', url);
-      cbk(null, {});
-    };
-
-    lib.getLocalDb(fakePouch, 'test_offlinepouch_3', false, log.wrap('getting localDB'), utils.cb(onDone, function(db){
-      onDone();
-    }));
   });
 
   it('4: if offline not supported should open server', function (done) {
@@ -115,7 +95,6 @@ describe('offlinePouch', function () {
     pouch.destroy(serverURL + '/test_offlinepouch_5', utils.safe(onDone, function(){
      pouch(serverURL + '/test_offlinepouch_5', utils.cb(onDone, function(serverDb){
       serverDb.put({_id: 'testdoc'}, utils.cb(onDone, function(){
-        serverDb.close(utils.cb(onDone, function(){
           var offlinePouchLog = log.wrap('offlinePouch');
           var offlinePouch = lib('test_offlinepouch_5', serverURL + '/test_offlinepouch_5', {retryDelay: 2, waitForInitialReplicate: true}, log.wrap('creating offline pouch'));
           offlinePouch.on('downUpToDate', function(){
@@ -127,14 +106,29 @@ describe('offlinePouch', function () {
                   offlinePouch2.get('testdoc', utils.safe(onDone, function(error, doc){
                     assert.ok(error);
                     assert.equal(error.reason, 'missing');
-                    onDone();
+                    var offlinePouch3 = lib('test_offlinepouch_55', serverURL + '/test_offlinepouch_5', {retryDelay: 2, waitForInitialReplicate: false}, log.wrap('creating offline pouch2'));
+
+                    offlinePouch3.post({_id: 'testdoc2'}, utils.cb(onDone, function(){
+                      log('saved local doc');
+                    }))
                   }));
                 }));
               }));
             });
             utils.log.emitterToLog(offlinePouch, offlinePouchLog);
           }));
-        }));
+
+
+      serverDb.changes({
+        continuous: true,
+        onChange: function(change){
+                        console.dir(change);
+                        if(change.id === 'testdoc2_locations')
+                        {
+                          onDone();
+          }
+          }
+        });
       })); 
     }));
   });

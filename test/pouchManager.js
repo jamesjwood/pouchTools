@@ -50,4 +50,47 @@ describe('data', function () {
 		});
 
 	});
+
+
+
+	it('should be able to create a view', function(done){
+		var log  = masterLog.wrap('2');
+		var onDone = function(err){
+			if(err)
+			{
+				log.error(err);
+			}
+			done(err);
+		};
+		var sourceDb = pouchManager.newDatabase('view_source', null, {localOnly: true, wipeLocal: true}, log.wrap('new source db'));
+
+		var view = pouchManager.newView('my_view', [{databaseName: 'view_source', generatorFunction: function(viewDB, seq, change, stage, mlog, cbk){
+			var item = change.doc;
+			assert.equal(item._id, 'testDoc');
+			var newViewItem = {
+				_id: 'testDoc',
+				fullName: item.firstName + " " + item.surname
+			};
+			viewDB.put(newViewItem, mlog.wrap('viewDB.put'), utils.cb(cbk, function(){
+				cbk();
+			}));
+
+		}}], {}, log.wrap('new View'));
+
+		sourceDb.put({_id: 'testDoc', firstName: 'james', surname: 'wood'}, log.wrap('save doc'), utils.cb(onDone, function(){
+			log('saved');
+		}));
+
+		view.db.changes({
+			continuous: true,
+			include_docs: true,
+			onChange: function(){
+				onDone();
+			}
+		}, function(){
+			log('changes set up');
+		});
+
+
+	});
 });
