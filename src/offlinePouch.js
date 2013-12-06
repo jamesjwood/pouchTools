@@ -83,7 +83,7 @@ module.exports = function(name, url, opts, log) {
         };
     });
 
-    that.close = function(callback) {
+    that.dispose = function(callback) {
         if(that.localDocLocation)
         {
             that.localDocLocation.cancel();
@@ -120,7 +120,7 @@ module.exports = function(name, url, opts, log) {
 
     that.wipeLocal = function(slog, cbk) {
         slog('wipeLocal');
-        that.close(utils.cb(cbk, function() {
+        that.dispose(utils.cb(cbk, function() {
             if (module.exports.offlineSupported() && !opts.serverOnly) {
                 var localName = module.exports.getLocalDBName(name);
                 pouch.destroy(localName, cbk);

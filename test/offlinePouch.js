@@ -74,7 +74,7 @@ describe('offlinePouch', function () {
 
     var offlinePouch = lib('test_offlinepouch_4', serverURL + '/test_offlinepouch_4',{retryDelay: 2}, log.wrap('creating offline pouch'));
     offlinePouch.on('setupComplete', function(){
-      offlinePouch.close(onDone);
+      offlinePouch.dispose(onDone);
     });
   });
 

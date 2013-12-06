@@ -67,14 +67,22 @@ describe('data', function () {
 		var view = pouchManager.newView('my_view', [{databaseName: 'view_source', generatorFunction: function(viewDB, seq, change, stage, mlog, cbk){
 			var item = change.doc;
 			assert.equal(item._id, 'testDoc');
-			var newViewItem = {
-				_id: 'testDoc',
-				fullName: item.firstName + " " + item.surname
-			};
-			viewDB.put(newViewItem, mlog.wrap('viewDB.put'), utils.cb(cbk, function(){
-				cbk();
+			viewDB.get('testDoc', utils.safe(onDone, function(error, item){
+				if(item)
+				{
+					updatingViewItem = item;
+				}
+				else
+				{
+					updatingViewItem = {
+						_id: 'testDoc'
+					};
+				}
+				updatingViewItem.fullName = item.firstName + " " + item.surname
+				viewDB.put(updatingViewItem, mlog.wrap('viewDB.put'), utils.cb(cbk, function(){
+					cbk();
+				}));
 			}));
-
 		}}], {}, log.wrap('new View'));
 
 		sourceDb.put({_id: 'testDoc', firstName: 'james', surname: 'wood'}, log.wrap('save doc'), utils.cb(onDone, function(){
@@ -84,8 +92,11 @@ describe('data', function () {
 		view.db.changes({
 			continuous: true,
 			include_docs: true,
-			onChange: function(){
-				onDone();
+			onChange: function(change){
+				assert.equal(change.doc.fullName, 'james wood');
+				view.dispose(utils.cb(onDone, function(){
+					onDone();
+				}));
 			}
 		}, function(){
 			log('changes set up');

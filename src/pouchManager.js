@@ -97,6 +97,17 @@ that.newView = function(name, generatorPairs, opts, setupLog){
     }
     that.views[name]  = newView;
 
+    newView.dispose = function(cbk){
+        utils.is.function(cbk);
+        this.db.dispose(utils.cb(cbk, function(){
+            for(var name in services)
+            {
+                services[name].dispose();
+            }  
+            cbk();
+        }));
+    };
+
     return newView;
 }
 

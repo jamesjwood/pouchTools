@@ -286,6 +286,9 @@ module.exports = function(id, srcDB, checkpointDB, queues, opts, initLog) {
     });
 
     var changes;
+    that.dispose = function(){
+        that.cancel();
+    };
     that.cancel = function() {
         log('cancelling');
         that.cancelled = true;
@@ -297,6 +300,7 @@ module.exports = function(id, srcDB, checkpointDB, queues, opts, initLog) {
             that.queueStack.cancel();
         }
         log('cancelled');
+        that.removeAllListeners();
     };
 
     that.on('error', function() {
