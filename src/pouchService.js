@@ -279,22 +279,36 @@ module.exports = function(id, srcDB, checkpointDB, queues, opts, initLog) {
                     return loge;
                 };
 
+                log('setting up changes feed for options');
                 changes = srcDB.changes(repOpts);
+
+                log('checking changes');
+                utils.is.object(changes, 'no changes returned!');
                 setupComplete();
             }));
         }));
     });
 
     var changes;
-    that.dispose = function(){
+    that.dispose = function() {
         that.cancel();
     };
     that.cancel = function() {
+        if(that.cancelled)
+        {
+            return;
+        }
         log('cancelling');
         that.cancelled = true;
         that.sEmit('cancelled');
         if (changes && opts.continuous) {
+            log('cancelling changes feed');
             changes.cancel();
+        }
+        else
+        {
+            console.dir(changes);
+            log('no changes feed to cancel');
         }
         if (that.queueStack) {
             that.queueStack.cancel();

@@ -18,8 +18,12 @@ var isError = function(status, codes) {
 
 module.exports = function(toWrap, log, opts) {
     "use strict";
-    utils.is.function(toWrap);
-    utils.is.function(log);
+    utils.is.
+
+    function(toWrap);
+    utils.is.
+
+    function(log);
 
     opts = opts || {};
     if (typeof opts.retryErrors !== 'undefined') {

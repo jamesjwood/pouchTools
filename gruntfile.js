@@ -19,10 +19,10 @@ module.exports = function(grunt) {
     },
     jsbeautifier : {
       run: {
-          src : ["src/**/*.js"]
+          src : ["src/**/*.js", "test/**/*.js"]
       },
       test: {
-          src : ["src/**/*.js"],
+          src : ["src/**/*.js", "test/**/*.js"],
           options : {
               mode:"VERIFY_ONLY"
           }

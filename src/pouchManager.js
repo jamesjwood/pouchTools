@@ -67,43 +67,47 @@ that.newService = function(name, databaseName, queues, opts, setupLog) {
     return service;
 };
 
-that.newView = function(name, generatorPairs, opts, setupLog){
+that.newView = function(name, generatorPairs, opts, setupLog) {
     utils.is.string(name);
     utils.is.array(generatorPairs);
     var newView = {};
 
-    var op = {localOnly: true};
-    if(opts.wipeLocal)
-    {
+    var op = {
+        localOnly: true
+    };
+    if (opts.wipeLocal) {
         op.wipeLocal = true;
     }
     var viewDB = that.newDatabase(name, null, op, setupLog);
-   
+
     var pair = generatorPairs[0];
     var databaseName = pair.databaseName;
     var generatorFunction = pair.generatorFunction;
     utils.is.string(databaseName);
-    utils.is.function(generatorFunction);
+    utils.is.
 
-    var genProcessor = processor(function(seq, item, stage, log, cbk){
+    function(generatorFunction);
+
+    var genProcessor = processor(function(seq, item, stage, log, cbk) {
         generatorFunction(viewDB, seq, item, stage, log, cbk);
     });
 
     var newService = that.newService(name + "_" + databaseName, databaseName, [processorQueue(genProcessor)], {}, setupLog.wrap('newService'));
-    
+
     newView.db = viewDB;
     newView.services = {
         databaseName: newService
     }
-    that.views[name]  = newView;
+    that.views[name] = newView;
 
-    newView.dispose = function(cbk){
-        utils.is.function(cbk);
-        this.db.dispose(utils.cb(cbk, function(){
-            for(var name in services)
-            {
-                services[name].dispose();
-            }  
+    newView.dispose = function(cbk) {
+        utils.is.
+
+        function(cbk);
+        for (var name in newView.services) {
+            newView.services[name].dispose();
+        }
+        this.db.dispose(utils.cb(cbk, function() {
             cbk();
         }));
     };
@@ -113,20 +117,28 @@ that.newView = function(name, generatorPairs, opts, setupLog){
 
 that.cancelled = false;
 
-that.close = utils.f(function close(callback) {
+that.dispose = utils.f(function dispose(callback) {
     log('cancelling');
     that.cancelled = true;
-    for (var sname in that.services) {
-        that.services[sname].cancel();
+    for (var vname in that.views) {
+        that.views[vname].dispose();
+        delete that.views[vname];
     }
-    async.forEach(that.databases, function(dname, cbk) {
-        that.databases[dname].close(cbk);
+    for (var sname in that.services) {
+        that.services[sname].dispose();
+        delete that.services[sname];
+    }
+    async.forEach(Object.keys(that.databases), function(dname, cbk) {
+        that.databases[dname].dispose(utils.cb(cbk, function() {
+            delete that.databases[dname];
+            cbk();
+        }));
     }, utils.cb(callback, function() {
         log('cancelled');
         that.emit('cancelled');
         callback();
     }));
-}, 'close');
+}, 'dispose');
 
 that.wipeLocal = utils.f(function wipeLocal(slog, cbk) {
     that.close(utils.cb(cbk, function() {
