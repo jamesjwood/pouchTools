@@ -97,7 +97,7 @@ that.newView = function(name, generatorPairs, opts, setupLog) {
     newView.db = viewDB;
     newView.services = {
         databaseName: newService
-    }
+    };
     that.views[name] = newView;
 
     newView.dispose = function(cbk) {
@@ -113,7 +113,7 @@ that.newView = function(name, generatorPairs, opts, setupLog) {
     };
 
     return newView;
-}
+};
 
 that.cancelled = false;
 

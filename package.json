@@ -1,6 +1,6 @@
 {
   "name": "pouchTools",
-  "version": "0.0.0-78",
+  "version": "0.0.0-79",
   "description": "tools for replicating and securing pouch/couch db",
   "main": "index.js",
   "scripts": {
@@ -29,14 +29,15 @@
     "brfs": "0.0.x",
     "matchdep": "0.3.x",
     "getWatchers": "git://github.com/jamesjwood/getWatchers.git",
-    "grunt-bumpup": "~0.4.2",
-    "grunt-jsbeautifier": "~0.2.3"
+    "grunt-bumpup": "0.4.x",
+    "grunt-jsbeautifier": "0.2.x",
+    "grunt-browserify": "x"
   },
   "dependencies": {
     "utils": "git://github.com/jamesjwood/utils.git",
     "jsonCrypto": "git://github.com/jamesjwood/jsonCrypto.git",
     "async": "0.2.x",
-    "pouchdb": "git://github.com/daleharvey/pouchdb.git",
+    "pouchdb": "git://github.com/jamesjwood/pouchdb.git",
     "browserify": "2.34.x"
   },
   "browser": {

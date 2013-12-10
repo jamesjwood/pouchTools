@@ -30,18 +30,17 @@ var localDbUrl;
 
 var dbName = 'system';
 
+var pouch = require('pouchdb');
+
 describe('pouchManager.replicator', function() {
     'use strict';
 
-    var pouch;
     if (typeof window === 'undefined') {
         masterLog('running on server');
         localDbUrl = 'leveldb://stage/';
-        pouch = require('pouchdb');
     } else {
         localDbUrl = '';
         masterLog('running on browser');
-        pouch = Pouch;
     }
 
     var cleanDB = function(done) {

@@ -123,7 +123,7 @@ module.exports = function(name, url, opts, log) {
     };
 
 
-    that.wipeLocal = function(slog, cbk) {
+    that.wipeLocalAndDispose = function(slog, cbk) {
         slog('wipeLocal');
         that.dispose(utils.cb(cbk, function() {
             if (module.exports.offlineSupported() && !opts.serverOnly) {
@@ -134,6 +134,69 @@ module.exports = function(name, url, opts, log) {
             cbk();
         }));
     };
+
+    var getServerDb = utils.f(function getServerDb(url, retries, retryDelay, slog, callback) {
+        utils.safe(callback, function() {
+            if (that.cancelled) {
+                return;
+            }
+            var ret = retries;
+            slog('pouch get db: ' + url);
+            retryHTTP(pouch, slog.wrap('retryHTTP'), {
+                retryErrors: [404]
+            })(url, utils.cb(callback, function(db) {
+                if (that.cancelled) {
+                    return;
+                }
+                slog('pouch found');
+                loadOrCreateLocationId(db, slog.wrap('loadOrCreateLocationId'), utils.cb(callback, function(id) {
+                    if (that.cancelled) {
+                        return;
+                    }
+                    db.locationId = id;
+                    callback(null, db);
+                }));
+
+            }));
+        })();
+    });
+
+    var getLocalDb = utils.f(function getLocalDb(pouchdb, name, wipeLocal, slog, callback) {
+        var localDBName = module.exports.getLocalDBName(name);
+        slog('creating localdb at:' + localDBName);
+        utils.safe(callback, function() {
+            if (that.cancelled) {
+                return;
+            }
+            slog('getting local db: ' + localDBName);
+            var openDB = function() {
+                if (that.cancelled) {
+                    return;
+                }
+                pouchdb(localDBName, utils.cb(callback, function(db) {
+                    if (that.cancelled) {
+                        return;
+                    }
+                    loadOrCreateLocationId(db, slog.wrap('loadOrCreateLocationId'), utils.cb(callback, function(id) {
+                        if (that.cancelled) {
+                            return;
+                        }
+                        db.locationId = id;
+                        callback(null, db);
+                    }));
+                }));
+            };
+            if (wipeLocal) {
+                slog('wiping existing if exists');
+                pouchdb.destroy(localDBName, utils.safe(callback, function(err) {
+                    openDB();
+                }));
+            } else {
+                openDB();
+            }
+
+        })();
+    });
 
 
     var setupComplete = function(error) {
@@ -169,7 +232,7 @@ module.exports = function(name, url, opts, log) {
         utils.is.object(sourcedb);
         var doc = change.doc;
         if (change.doc.type !== revLocationTypeName && ("_design/" !== doc._id.substr(0, 8))) {
-            docLocLog('is doc that needs a docLocation')
+            docLocLog('is doc that needs a docLocation');
             var newRevLocation = revLocation(change.doc);
             docLocLog('checking for existing ' + newRevLocation._id);
             localDB.get(newRevLocation._id, utils.safe(onFail, function(error, existing) {
@@ -190,7 +253,7 @@ module.exports = function(name, url, opts, log) {
                     docs: [newRevLocation]
                 }, {}, utils.cb(onFail, function() {
 
-                }))
+                }));
             }));
         }
     };
@@ -201,7 +264,7 @@ module.exports = function(name, url, opts, log) {
         }
         var onFail = function(error) {
             runLog.error(error);
-        }
+        };
         that.on('upChangeDone', utils.safe(onFail, function(seq, change) {
             if (that.cancelled) {
                 return;
@@ -268,68 +331,6 @@ module.exports = function(name, url, opts, log) {
     };
 
 
-    var getServerDb = utils.f(function getServerDb(url, retries, retryDelay, slog, callback) {
-        utils.safe(callback, function() {
-            if (that.cancelled) {
-                return;
-            }
-            var ret = retries;
-            slog('pouch get db: ' + url);
-            retryHTTP(pouch, slog.wrap('retryHTTP'), {
-                retryErrors: [404]
-            })(url, utils.cb(callback, function(db) {
-                if (that.cancelled) {
-                    return;
-                }
-                slog('pouch found');
-                loadOrCreateLocationId(db, slog.wrap('loadOrCreateLocationId'), utils.cb(callback, function(id) {
-                    if (that.cancelled) {
-                        return;
-                    }
-                    db.locationId = id;
-                    callback(null, db);
-                }));
-
-            }));
-        })();
-    });
-
-    var getLocalDb = utils.f(function getLocalDb(pouchdb, name, wipeLocal, slog, callback) {
-        var localDBName = module.exports.getLocalDBName(name);
-        slog('creating localdb at:' + localDBName);
-        utils.safe(callback, function() {
-            if (that.cancelled) {
-                return;
-            }
-            slog('getting local db: ' + localDBName);
-            var openDB = function() {
-                if (that.cancelled) {
-                    return;
-                }
-                pouchdb(localDBName, utils.cb(callback, function(db) {
-                    if (that.cancelled) {
-                        return;
-                    }
-                    loadOrCreateLocationId(db, slog.wrap('loadOrCreateLocationId'), utils.cb(callback, function(id) {
-                        if (that.cancelled) {
-                            return;
-                        }
-                        db.locationId = id;
-                        callback(null, db);
-                    }));
-                }));
-            };
-            if (wipeLocal) {
-                slog('wiping existing if exists');
-                pouchdb.destroy(localDBName, utils.safe(callback, function(err) {
-                    openDB();
-                }));
-            } else {
-                openDB();
-            }
-
-        })();
-    });
 
     that.goOnline = function(serverurl, rlog, cbk) {
         if (that.cancelled) {
@@ -387,7 +388,7 @@ module.exports = function(name, url, opts, log) {
 
         var onFail = function(error) {
             runLog.error(error);
-        }
+        };
 
         if (!opts.localOnly) {
             that.localDocLocation = localDB.changes({
