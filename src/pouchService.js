@@ -294,8 +294,7 @@ module.exports = function(id, srcDB, checkpointDB, queues, opts, initLog) {
         that.cancel();
     };
     that.cancel = function() {
-        if(that.cancelled)
-        {
+        if (that.cancelled) {
             return;
         }
         log('cancelling');
@@ -304,9 +303,7 @@ module.exports = function(id, srcDB, checkpointDB, queues, opts, initLog) {
         if (changes && opts.continuous) {
             log('cancelling changes feed');
             changes.cancel();
-        }
-        else
-        {
+        } else {
             console.dir(changes);
             log('no changes feed to cancel');
         }

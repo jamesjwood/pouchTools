@@ -169,7 +169,7 @@ module.exports = function(name, url, opts, log) {
         utils.is.object(sourcedb);
         var doc = change.doc;
         if (change.doc.type !== revLocationTypeName && ("_design/" !== doc._id.substr(0, 8))) {
-            docLocLog('is doc that needs a docLocation')
+            docLocLog('is doc that needs a docLocation');
             var newRevLocation = revLocation(change.doc);
             docLocLog('checking for existing ' + newRevLocation._id);
             localDB.get(newRevLocation._id, utils.safe(onFail, function(error, existing) {
@@ -190,7 +190,7 @@ module.exports = function(name, url, opts, log) {
                     docs: [newRevLocation]
                 }, {}, utils.cb(onFail, function() {
 
-                }))
+                }));
             }));
         }
     };
@@ -201,7 +201,7 @@ module.exports = function(name, url, opts, log) {
         }
         var onFail = function(error) {
             runLog.error(error);
-        }
+        };
         that.on('upChangeDone', utils.safe(onFail, function(seq, change) {
             if (that.cancelled) {
                 return;
@@ -387,7 +387,7 @@ module.exports = function(name, url, opts, log) {
 
         var onFail = function(error) {
             runLog.error(error);
-        }
+        };
 
         if (!opts.localOnly) {
             that.localDocLocation = localDB.changes({

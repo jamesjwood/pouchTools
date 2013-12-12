@@ -1,6 +1,6 @@
 {
   "name": "pouchTools",
-  "version": "0.0.0-78",
+  "version": "0.0.0-79",
   "description": "tools for replicating and securing pouch/couch db",
   "main": "index.js",
   "scripts": {

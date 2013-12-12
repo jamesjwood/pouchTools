@@ -21,21 +21,27 @@ var processorQueue = require('./processorQueue.js');
 that.databases = {};
 that.services = {};
 that.views = {};
+var pouch = require('pouchdb');
+
+
 
 that.newDatabase = function(name, url, opts, setupLog) {
     setupLog('creating database: ' + name);
-
     opts = opts || {};
     opts.checkpointDb = that.databases.services;
     if (that.databases[name]) {
         throw new Error('database aready opened');
     }
+
     var database = offlinePouch(name, url, opts, setupLog);
+
     that.databases[name] = database;
     utils.log.emitterToLog(database, databasesLog.wrap(name));
     that.emit('newDatabase', name, database);
     return database;
 };
+
+
 that.newService = function(name, databaseName, queues, opts, setupLog) {
     setupLog('creating service: ' + name);
     is.string(name);
@@ -97,7 +103,7 @@ that.newView = function(name, generatorPairs, opts, setupLog) {
     newView.db = viewDB;
     newView.services = {
         databaseName: newService
-    }
+    };
     that.views[name] = newView;
 
     newView.dispose = function(cbk) {
@@ -113,7 +119,7 @@ that.newView = function(name, generatorPairs, opts, setupLog) {
     };
 
     return newView;
-}
+};
 
 that.cancelled = false;
 
@@ -141,16 +147,23 @@ that.dispose = utils.f(function dispose(callback) {
 }, 'dispose');
 
 that.wipeLocal = utils.f(function wipeLocal(slog, cbk) {
-    that.close(utils.cb(cbk, function() {
+    that.dispose(utils.cb(cbk, function() {
         async.forEachSeries(Object.keys(that.databases), function(name, cb) {
             slog('wiping: ' + name);
             that.databases[name].wipeLocal(slog.wrap('wipe ' + name), cb);
         }, utils.cb(cbk, function() {
             slog('all wiped');
-            that.databases = {};
-            that.services = {};
-            that.cancelled = false;
-            cbk();
+            var databaseList = Object.keys(that.databases).concat(["users", "lists", "shares", "services"]);
+            async.forEachSeries(databaseList, function(name, cb) {
+                pouch.destroy(name, utils.safe(cb, function() {
+                    cb();
+                }));
+            }, utils.cb(cbk, function() {
+                that.databases = {};
+                that.services = {};
+                that.cancelled = false;
+                cbk();
+            }));
         }));
     }));
 }, 'wipeLocal');

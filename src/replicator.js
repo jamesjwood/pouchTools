@@ -27,7 +27,7 @@ var genReplicationId = function(src, target, filter, log) {
         throw new Error('the source or target ids cannot be null');
     }
     var hashBuff = jsonCrypto.hashBuffer(new Buff(src.id() + target.id() + filterFun, 'utf8'), 'md5');
-    return src.id() + "-" + target.id() + hashBuff.toString('hex');
+    return hashBuff.toString('hex');
 };
 
 module.exports = function(src, target, opts, initLog) {

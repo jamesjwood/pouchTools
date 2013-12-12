@@ -43,14 +43,16 @@ describe('data', function() {
         }, log.wrap('new database'));
         assert.ok(pouchManager.databases.test);
         testDb.on('setupComplete', utils.safe(onDone, function() {
-            var testService = pouchManager.newService('test', 'test', [queue], {continuous: true}, log.wrap('new Service'));
+            var testService = pouchManager.newService('test', 'test', [queue], {
+                continuous: true
+            }, log.wrap('new Service'));
             assert.ok(pouchManager.services.test);
             testService.on('setupComplete', utils.safe(onDone, function() {
-	            pouchManager.dispose(utils.cb(onDone, function() {
-	                assert.ifError(pouchManager.services.test, 'should be null');
-	                assert.ifError(pouchManager.databases.test, 'should be null');
-	                onDone();
-	            }));
+                pouchManager.dispose(utils.cb(onDone, function() {
+                    assert.ifError(pouchManager.services.test, 'should be null');
+                    assert.ifError(pouchManager.databases.test, 'should be null');
+                    onDone();
+                }));
             }));
         }));
 

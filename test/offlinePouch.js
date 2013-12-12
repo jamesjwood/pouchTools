@@ -125,7 +125,7 @@ describe('offlinePouch', function() {
                                         _id: 'testdoc2'
                                     }, utils.cb(onDone, function() {
                                         log('saved local doc');
-                                    }))
+                                    }));
                                 }));
                             }));
                         }));
@@ -143,7 +143,7 @@ describe('offlinePouch', function() {
                                 offlinePouch3.dispose(utils.cb(onDone, function() {
                                     offlinePouch3.dispose(utils.cb(onDone, function() {
                                         onDone();
-                                    }))
+                                    }));
                                 }));
                             }));
                         }
@@ -181,7 +181,7 @@ describe('offlinePouch', function() {
             }, utils.cb(onDone, function() {
                 offlinePouch.dispose(utils.cb(onDone, function() {
                     onDone();
-                }))
+                }));
             }));
         });
 
