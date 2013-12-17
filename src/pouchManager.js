@@ -141,7 +141,7 @@ that.dispose = utils.f(function dispose(callback) {
 }, 'dispose');
 
 that.wipeLocal = utils.f(function wipeLocal(slog, cbk) {
-    that.close(utils.cb(cbk, function() {
+    that.dispose(utils.cb(cbk, function() {
         async.forEachSeries(Object.keys(that.databases), function(name, cb) {
             slog('wiping: ' + name);
             that.databases[name].wipeLocal(slog.wrap('wipe ' + name), cb);

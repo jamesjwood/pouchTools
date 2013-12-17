@@ -27,6 +27,14 @@ var lib = require('../src/offlinePouch.js');
 var serverURL = 'http://admin:password@localhost:5985';
 var noServerURL = 'http://noserver/nodb';
 
+var jsonCrypto = require('jsonCrypto');
+
+
+var EXPONENT = 65537;
+var MODULUS = 512;
+
+var userKeyPair = jsonCrypto.generateKeyPEMBufferPair(MODULUS, EXPONENT);
+var userCertificate =  jsonCrypto.createCert(userKeyPair.publicPEM);
 
 
 describe('offlinePouch', function() {
@@ -155,9 +163,16 @@ describe('offlinePouch', function() {
                 var offlinePouch = lib('test_offlinepouch_7', serverDBUrl, {
                     retryDelay: 2,
                     waitForInitialReplicate: false,
-                    continuous: true
+                    continuous: true,
+                    useDocLocations: true,
+                    docLocationCert: userCertificate,
+                    docLocationPrivatePEMBuffer: userKeyPair.privatePEM
                 }, log.wrap('creating offline pouch'));
+
+
                 utils.log.emitterToLog(offlinePouch, log.wrap('offlinePouch'));
+
+                offlinePouch.on('error', onDone);
 
                 offlinePouch.put({
                     _id: 'testdoc2'

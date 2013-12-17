@@ -324,6 +324,7 @@ var getAwaitingSaveProcessor = function(target) {
                             //logs('error saving rev: ' + rev._rev + ' id : '  + rev._id + ' for seq: ' + seq);
                             var e = new Error('error saving rev: ' + rev._rev + ' id : ' + rev._id + ' for seq: ' + seq);
                             e.inner = error;
+                            e.rev = rev;
                             if (typeof error.status !== 'undefined' && error.status === 0) {
                                 logs('returning non critical error');
                                 e.critical = false;
