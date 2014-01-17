@@ -13,7 +13,9 @@ var retryHTTP = require('./retryHTTP.js');
 
 module.exports = function(name, url, opts, log) {
     utils.is.string(name, 'name');
-    utils.is.function(log, 'log');
+    utils.is.
+
+    function(log, 'log');
     opts = opts || {};
     opts.useDocLocations = opts.useDocLocations || false;
     if (opts.useDocLocations) {
@@ -245,7 +247,7 @@ module.exports = function(name, url, opts, log) {
                     return;
                 }
                 if (error) {
-                    if (error.reason !== 'missing') {
+                    if (error.message !== 'missing') {
                         onFail(error);
                         return;
                     }
@@ -255,16 +257,15 @@ module.exports = function(name, url, opts, log) {
                 }
                 newRevLocation[sourcedb.locationId] = doc._rev;
 
-                if(!newRevLocation.creator)
-                {
-                  newRevLocation.creator = opts.docLocationCert.id;
-                  newRevLocation.created = new Date();
+                if (!newRevLocation.creator) {
+                    newRevLocation.creator = opts.docLocationCert.id;
+                    newRevLocation.created = new Date();
                 }
 
                 runLog('signing the object');
                 newRevLocation.editor = opts.docLocationCert.id;
                 newRevLocation.edited = new Date();
-                
+
                 var signedDocLocation = jsonCrypto.signObject(newRevLocation, opts.docLocationPrivatePEMBuffer, opts.docLocationCert, true, runLog.wrap('jsonCrypto.signObject'));
                 localDB.bulkDocs({
                     docs: [signedDocLocation]
@@ -474,7 +475,7 @@ var loadOrCreateLocationId = function(p, lg, cbk) {
     get('_local/_locationId',
         utils.safe(cbk, function(error, doc) {
             if (error) {
-                if (error.reason === 'missing') {
+                if (error.message === 'missing') {
                     var newUuid = utils.uuid();
                     setLocationId(newUuid, p, lg.wrap('setLocationId'), cbk);
                     return;

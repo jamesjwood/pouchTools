@@ -34,7 +34,7 @@ var EXPONENT = 65537;
 var MODULUS = 512;
 
 var userKeyPair = jsonCrypto.generateKeyPEMBufferPair(MODULUS, EXPONENT);
-var userCertificate =  jsonCrypto.createCert(userKeyPair.publicPEM);
+var userCertificate = jsonCrypto.createCert(userKeyPair.publicPEM);
 
 
 describe('offlinePouch', function() {
