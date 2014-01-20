@@ -60,6 +60,17 @@ module.exports = function(grunt) {
       },
       all: { src: ['test.js'] }
     },
+    browserify: {
+      test: {
+        files: {
+          './stage/test.js': ['./test.js'],
+        },
+        options: {
+          debug: true,
+          ignore: ['domain', 'loggly', 'ga']
+        }
+      }
+    },
     shell: {
       makeStage: {
         command: 'rm -rf stage; mkdir stage',
@@ -172,7 +183,7 @@ grunt.registerTask('bundleForge', function(){
 });
 
 grunt.registerTask('build', ['shell:makeBin', 'shell:browserifyValidator']);
-grunt.registerTask('test', ['build', 'jshint', 'jsbeautifier:test', 'shell:makeStage', 'simplemocha', 'shell:browserify', 'karma:local']);
+grunt.registerTask('test', ['build', 'jshint', 'jsbeautifier:test', 'shell:makeStage', 'simplemocha', 'browserify:test', 'karma:local']);
 grunt.registerTask('development', ['build', 'bumpup:prerelease']);
 grunt.registerTask('production', ['build', 'bumpup:patch']);
 

@@ -18,7 +18,6 @@ var MODULUS = 512;
 var pouch = require('pouchdb');
 
 if (typeof window != 'undefined') {
-
     localDbUrl = '';
 
 } else {
