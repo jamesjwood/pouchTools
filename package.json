@@ -33,6 +33,9 @@
     "grunt-browserify": "x"
   },
   "dependencies": {
+    "jsonCrypto": "git://github.com/jamesjwood/jsonCrypto.git",
+    "pouchdb": "git://github.com/jamesjwood/pouchdb.git",
+    "utils": "git://github.com/jamesjwood/utils.git",
     "async": "0.2.x",
     "browserify": "3.20.x"
   },

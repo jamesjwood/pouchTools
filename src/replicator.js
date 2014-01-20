@@ -305,6 +305,7 @@ var getAwaitingSaveProcessor = function(target) {
             logs('saving rev' + rev._rev);
             checkExists(target, rev._id, rev._rev, logs.wrap('checking exists'), utils.cb(cbk, function(exists) {
                 if (exists === false) {
+                    logs('item missing at target, saving');
                     retryHTTP(target.bulkDocs, logs.wrap('retryHTTP'))({
                         docs: [rev]
                     }, {
@@ -313,6 +314,9 @@ var getAwaitingSaveProcessor = function(target) {
                         if (state.cancelled) {
                             return;
                         }
+                        logs('target responded');
+                        logs.dir(error);
+                        logs.dir(response);
                         if (!error && typeof response !== 'undefined' && response.length > 0) {
                             var revResponse = response[0];
                             if (typeof revResponse.error !== 'undefined' && revResponse.error) {
