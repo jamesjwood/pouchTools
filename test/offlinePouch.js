@@ -27,13 +27,21 @@ var lib = require('../src/offlinePouch.js');
 var serverURL = 'http://admin:password@localhost:5985';
 var noServerURL = 'http://noserver/nodb';
 
+var jsonCrypto = require('jsonCrypto');
+
+
+var EXPONENT = 65537;
+var MODULUS = 512;
+
+var userKeyPair = jsonCrypto.generateKeyPEMBufferPair(MODULUS, EXPONENT);
+var userCertificate = jsonCrypto.createCert(userKeyPair.publicPEM);
 
 
 describe('offlinePouch', function() {
     'use strict';
     var cleanDB = function(done) {
 
-        async.forEachSeries(['1', '55', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], function(name, cbk) {
+        async.forEachSeries(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], function(name, cbk) {
 
             pouch.destroy(serverURL + '/test_offlinepouch_' + name, function(error, body) {
                 pouch.destroy(rootDir + 'test_offlinepouch_' + name, function(error2, body2) {
@@ -54,6 +62,7 @@ describe('offlinePouch', function() {
         });
     });
 
+    /*
     it('4: if offline not supported should open server', function(done) {
         var log = masterLog.wrap('4');
         var onDone = function(error) {
@@ -94,65 +103,101 @@ describe('offlinePouch', function() {
         var offlinePouch2;
         var offlinePouch;
 
-        pouch.destroy(serverURL + '/test_offlinepouch_5', utils.safe(onDone, function() {
-            pouch(serverURL + '/test_offlinepouch_5', utils.cb(onDone, function(serverDb) {
+        var serverDBUrl = serverURL + '/test_offlinepouch_5';
+
+        pouch.destroy(serverDBUrl, utils.safe(onDone, function() {
+            pouch(serverDBUrl, utils.cb(onDone, function(serverDb) {
                 serverDb.put({
                     _id: 'testdoc'
                 }, utils.cb(onDone, function() {
                     var offlinePouchLog = log.wrap('offlinePouch');
-                    var offlinePouch = lib('test_offlinepouch_5', serverURL + '/test_offlinepouch_5', {
+                    var offlinePouch = lib('test_offlinepouch_5', serverDBUrl, {
                         retryDelay: 2,
                         waitForInitialReplicate: true
                     }, log.wrap('creating offline pouch'));
+                    utils.log.emitterToLog(offlinePouch, offlinePouchLog);
                     offlinePouch.on('downUpToDate', function() {
                         offlinePouch.get('testdoc', utils.cb(onDone, function(doc) {
                             assert.equal('testdoc', doc._id);
-                            offlinePouch.wipeLocal(log.wrap('wipeLocal'), utils.cb(onDone, function() {
-                                offlinePouch2 = lib('test_offlinepouch_5', serverURL + '/test_offlinepouch_5', {
+                            offlinePouch.wipeLocalAndDispose(log.wrap('wipeLocal'), utils.cb(onDone, function() {
+                                offlinePouch2 = lib('test_offlinepouch_5', serverDBUrl, {
                                     retryDelay: 2,
                                     waitForInitialReplicate: false
                                 }, log.wrap('creating offline pouch2'));
+                                utils.log.emitterToLog(offlinePouch2, log.wrap('offlinePouch2'));
                                 log('getting test doc (should be deleted)');
                                 offlinePouch2.get('testdoc', utils.safe(onDone, function(error, doc) {
                                     assert.ok(error);
                                     assert.equal(error.reason, 'missing');
-                                    offlinePouch3 = lib('test_offlinepouch_55', serverURL + '/test_offlinepouch_5', {
-                                        retryDelay: 2,
-                                        waitForInitialReplicate: false
-                                    }, log.wrap('creating offline pouch2'));
+                                    onDone();
 
-                                    offlinePouch3.post({
-                                        _id: 'testdoc2'
-                                    }, utils.cb(onDone, function() {
-                                        log('saved local doc');
-                                    }));
                                 }));
                             }));
                         }));
                     });
-                    utils.log.emitterToLog(offlinePouch, offlinePouchLog);
                 }));
-
-
-                serverDb.changes({
-                    continuous: true,
-                    onChange: function(change) {
-                        console.dir(change);
-                        if (change.id === 'testdoc2_locations') {
-                            offlinePouch3.dispose(utils.cb(onDone, function() {
-                                offlinePouch3.dispose(utils.cb(onDone, function() {
-                                    offlinePouch3.dispose(utils.cb(onDone, function() {
-                                        onDone();
-                                    }));
-                                }));
-                            }));
-                        }
-                    }
-                });
             }));
         }));
     });
 
+    */
+    it('7: should create docLocations and replicate them', function(done) {
+        var log = masterLog.wrap('7');
+        var onDone = function(error) {
+            if (error) {
+                log.error(error);
+            }
+            done(error);
+        };
+        this.timeout(10000);
+
+        lib.offlineSupported = function() {
+            return true;
+        };
+        var serverDBUrl = serverURL + '/test_offlinepouch_7';
+
+
+        pouch.destroy(serverDBUrl, utils.safe(onDone, function() {
+            pouch(serverDBUrl, utils.cb(onDone, function(serverDb) {
+
+                var offlinePouch = lib('test_offlinepouch_7', serverDBUrl, {
+                    retryDelay: 2,
+                    waitForInitialReplicate: false,
+                    continuous: true,
+                    useDocLocations: true,
+                    docLocationCert: userCertificate,
+                    docLocationPrivatePEMBuffer: userKeyPair.privatePEM
+                }, log.wrap('creating offline pouch'));
+
+
+                utils.log.emitterToLog(offlinePouch, log.wrap('offlinePouch'));
+
+                offlinePouch.on('error', onDone);
+
+                offlinePouch.put({
+                    _id: 'testdoc2'
+                }, utils.cb(onDone, function() {
+                    log('saved local doc');
+                    log('setting up changes');
+                    var changes = serverDb.changes({
+                        continuous: true,
+                        onChange: function(change) {
+                            log('CHANGE DETECTED');
+                            if (change.id === 'testdoc2_locations') {
+                                log('closing');
+                                changes.cancel();
+                                offlinePouch.dispose(utils.cb(onDone, function() {
+                                    onDone();
+                                }));
+                            }
+                        }
+                    });
+                }));
+            }));
+        }));
+    });
+
+    /*
     it('6: if offline, should be able to start using anyway', function(done) {
         var log = masterLog.wrap('6');
         var onDone = function(error) {
@@ -181,9 +226,10 @@ describe('offlinePouch', function() {
             }, utils.cb(onDone, function() {
                 offlinePouch.dispose(utils.cb(onDone, function() {
                     onDone();
-                }));
+                }))
             }));
         });
 
     });
+*/
 });

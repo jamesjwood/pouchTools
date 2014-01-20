@@ -182,6 +182,7 @@ grunt.registerTask('bundleForge', function(){
   console.log('RSA bundle written to: ' + bundle);
 });
 
+grunt.registerTask('install', []);
 grunt.registerTask('build', ['shell:makeBin', 'shell:browserifyValidator']);
 grunt.registerTask('test', ['build', 'jshint', 'jsbeautifier:test', 'shell:makeStage', 'simplemocha', 'browserify:test', 'karma:local']);
 grunt.registerTask('development', ['build', 'bumpup:prerelease']);

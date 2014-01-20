@@ -1,12 +1,12 @@
 {
   "name": "pouchTools",
-  "version": "0.0.0-79",
+  "version": "0.0.3",
   "description": "tools for replicating and securing pouch/couch db",
   "main": "index.js",
   "scripts": {
     "test": "node node_modules/grunt-cli/bin/grunt test",
     "install": "",
-    "link": "rm -R node_modules; npm link; npm link getWatchers; npm link utils;npm link jsonCrypto; grunt install"
+    "link": "rm -R node_modules; npm link; npm link getWatchers; npm link utils;npm link jsonCrypto; npm link pouchdb; grunt install"
   },
   "repository": {
     "type": "git",
@@ -16,29 +16,28 @@
   "license": "BSD",
   "devDependencies": {
     "sinon": "1.7.x",
-    "nano": "4.1.x",
+    "nano": "4.3.x",
     "karma-safari-launcher": "0.1.x",
     "karma-mocha": "0.1.x",
     "grunt": "0.4.x",
-    "grunt-shell": "0.5.x",
+    "grunt-shell": "0.6.x",
     "grunt-simple-mocha": "0.4.x",
-    "grunt-contrib-jshint": "0.7.x",
+    "grunt-contrib-jshint": "0.8.x",
     "grunt-contrib-watch": "0.5.x",
     "grunt-karma": "0.6.x",
     "grunt-bumpx": "0.1.x",
     "brfs": "0.0.x",
     "matchdep": "0.3.x",
-    "getWatchers": "git://github.com/jamesjwood/getWatchers.git",
-    "grunt-bumpup": "0.4.x",
+    "grunt-bumpup": "0.5.x",
     "grunt-jsbeautifier": "0.2.x",
     "grunt-browserify": "x"
   },
   "dependencies": {
-    "utils": "git://github.com/jamesjwood/utils.git",
     "jsonCrypto": "git://github.com/jamesjwood/jsonCrypto.git",
-    "async": "0.2.x",
     "pouchdb": "git://github.com/jamesjwood/pouchdb.git",
-    "browserify": "2.34.x"
+    "utils": "git://github.com/jamesjwood/utils.git",
+    "async": "0.2.x",
+    "browserify": "3.20.x"
   },
   "browser": {
     "REQUIRE_PATH": false

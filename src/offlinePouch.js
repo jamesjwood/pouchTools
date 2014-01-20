@@ -7,14 +7,21 @@ var url = require('url');
 
 var pouch = require('pouchdb');
 
-
+var jsonCrypto = require('jsonCrypto');
 var retryHTTP = require('./retryHTTP.js');
 
 
 module.exports = function(name, url, opts, log) {
-    assert.ok('name');
-    assert.ok('opts');
-    assert.ok('log');
+    utils.is.string(name, 'name');
+    utils.is.
+
+    function(log, 'log');
+    opts = opts || {};
+    opts.useDocLocations = opts.useDocLocations || false;
+    if (opts.useDocLocations) {
+        utils.is.object(opts.docLocationPrivatePEMBuffer, 'opts.docLocationPrivatePEMBuffer');
+        utils.is.object(opts.docLocationCert, 'opts.docLocationCert');
+    }
 
     var retryDelay = opts.retryDelay || 5000;
     if (typeof opts.wipeLocal === 'undefined') {
@@ -231,7 +238,7 @@ module.exports = function(name, url, opts, log) {
         utils.is.object(change);
         utils.is.object(sourcedb);
         var doc = change.doc;
-        if (change.doc.type !== revLocationTypeName && ("_design/" !== doc._id.substr(0, 8))) {
+        if (change.doc.type !== revLocationTypeName && ("_design/" !== doc._id.substr(0, 8)) && opts.useDocLocations) {
             docLocLog('is doc that needs a docLocation');
             var newRevLocation = revLocation(change.doc);
             docLocLog('checking for existing ' + newRevLocation._id);
@@ -240,7 +247,7 @@ module.exports = function(name, url, opts, log) {
                     return;
                 }
                 if (error) {
-                    if (error.reason !== 'missing') {
+                    if (error.message !== 'missing') {
                         onFail(error);
                         return;
                     }
@@ -249,8 +256,19 @@ module.exports = function(name, url, opts, log) {
                     newRevLocation = existing;
                 }
                 newRevLocation[sourcedb.locationId] = doc._rev;
+
+                if (!newRevLocation.creator) {
+                    newRevLocation.creator = opts.docLocationCert.id;
+                    newRevLocation.created = new Date();
+                }
+
+                runLog('signing the object');
+                newRevLocation.editor = opts.docLocationCert.id;
+                newRevLocation.edited = new Date();
+
+                var signedDocLocation = jsonCrypto.signObject(newRevLocation, opts.docLocationPrivatePEMBuffer, opts.docLocationCert, true, runLog.wrap('jsonCrypto.signObject'));
                 localDB.bulkDocs({
-                    docs: [newRevLocation]
+                    docs: [signedDocLocation]
                 }, {}, utils.cb(onFail, function() {
 
                 }));
@@ -457,7 +475,7 @@ var loadOrCreateLocationId = function(p, lg, cbk) {
     get('_local/_locationId',
         utils.safe(cbk, function(error, doc) {
             if (error) {
-                if (error.reason === 'missing') {
+                if (error.message === 'missing') {
                     var newUuid = utils.uuid();
                     setLocationId(newUuid, p, lg.wrap('setLocationId'), cbk);
                     return;
