@@ -189,7 +189,7 @@ grunt.registerTask('bundleForge', function(){
 grunt.registerTask('install', []);
 grunt.registerTask('build', ['shell:makeBin', 'shell:browserifyValidator', 'shell:makeStage']);
 grunt.registerTask('test', ['build', 'jshint', 'jsbeautifier:test','simplemocha', 'browserify:test', 'karma:local']);
-grunt.registerTask('development', ['build', 'bumpup:prerelease']);
-grunt.registerTask('production', ['build', 'bumpup:patch']);
+grunt.registerTask('development', ['build']);
+grunt.registerTask('production', ['build']);
 
 };
