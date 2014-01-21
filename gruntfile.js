@@ -67,8 +67,8 @@ module.exports = function(grunt) {
         },
         options: {
           debug: true,
-          ignore: ['domain', 'loggly', 'ga']
-        }
+          ignore: ['domain', 'loggly', 'ga', 'universal-analytics']
+        },
       }
     },
     shell: {
@@ -91,12 +91,16 @@ module.exports = function(grunt) {
       browserify:{
         command: 'node ./node_modules/browserify/bin/cmd.js  --debug -o ./stage/test.js -i domain -i loggly -i ga -e ./test.js;',
         options:{
+          stdout: true,
+          stderr: true,
           failOnError: true
         }
       },
       browserifyValidator:{
         command: 'node ./node_modules/browserify/bin/cmd.js --debug -o ./bin/validator.js -i domain -r ./src/validateDoc.js;',
         options:{
+          stdout: true,
+          stderr: true,
           failOnError: true
         }
       },
@@ -183,8 +187,8 @@ grunt.registerTask('bundleForge', function(){
 });
 
 grunt.registerTask('install', []);
-grunt.registerTask('build', ['shell:makeBin', 'shell:browserifyValidator']);
-grunt.registerTask('test', ['build', 'jshint', 'jsbeautifier:test', 'shell:makeStage', 'simplemocha', 'browserify:test', 'karma:local']);
+grunt.registerTask('build', ['shell:makeBin', 'shell:browserifyValidator', 'shell:makeStage']);
+grunt.registerTask('test', ['build', 'jshint', 'jsbeautifier:test','simplemocha', 'browserify:test', 'karma:local']);
 grunt.registerTask('development', ['build', 'bumpup:prerelease']);
 grunt.registerTask('production', ['build', 'bumpup:patch']);
 

@@ -125,8 +125,7 @@ describe('designDoc', function() {
 
                     db.put(testDoc, utils.safe(onDone, function(error) {
                         assert.ok(error);
-                        log.error(error);
-                        assert.equal(0, error.reason.indexOf('Must have a type'));
+                        assert.equal(0, error.message.indexOf('Must have a type'));
                         done();
                     }));
                 }));
@@ -162,7 +161,7 @@ describe('designDoc', function() {
                 db.put(designDoc, utils.cb(onDone, function() {
                     db.put(testDoc, utils.safe(onDone, function(error) {
                         assert.ok(error);
-                        assert.equal(0, error.reason.indexOf('Must have a signature'));
+                        assert.equal(0, error.message.indexOf('Must have a signature'));
                         done();
                     }));
                 }));
@@ -199,7 +198,7 @@ describe('designDoc', function() {
                 db.put(designDoc, utils.cb(onDone, function() {
                     db.put(testDoc, utils.safe(onDone, function(error) {
                         assert.ok(error);
-                        assert.equal(0, error.reason.indexOf('type not allowed'));
+                        assert.equal(0, error.message.indexOf('type not allowed'));
                         done();
                     }));
                 }));
@@ -238,7 +237,7 @@ describe('designDoc', function() {
             pouch(serverURL + 'test_designdoc_5', utils.cb(onDone, function(db) {
                 db.put(designDoc, utils.cb(onDone, function() {
                     db.put(testDoc, utils.safe(onDone, function(error) {
-                        assert.equal('the user ' + signedUserCert.id + ' is not an editor or contributor', error.reason);
+                        assert.equal('the user ' + signedUserCert.id + ' is not an editor or contributor', error.message);
                         assert.ok(error);
                         done();
                     }));
@@ -362,7 +361,7 @@ describe('designDoc', function() {
                         updatedDoc._rev = response.rev;
                         db.put(updatedDoc, utils.safe(onDone, function(error2) {
                             assert.ok(error2, 'should have errored when updating doc');
-                            assert.equal('the user ' + signedUser2Cert.id + ' can only update their own records', error2.reason);
+                            assert.equal('the user ' + signedUser2Cert.id + ' can only update their own records', error2.message);
                             done();
                         }));
                     }));
