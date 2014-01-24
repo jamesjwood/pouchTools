@@ -1,12 +1,12 @@
 {
-  "name": "pouchTools",
-  "version": "0.0.4-0",
+  "name": "tsuju-pouchtools",
+  "version": "0.0.5",
   "description": "tools for replicating and securing pouch/couch db",
   "main": "index.js",
   "scripts": {
     "test": "node node_modules/grunt-cli/bin/grunt test",
     "install": "grunt install",
-    "link": "rm -R node_modules; npm link; npm link getWatchers; npm link utils;npm link jsonCrypto; npm link pouchdb; grunt install"
+    "link": "rm -R node_modules; npm link; npm link tsuju-utils;npm link tsuju-jsoncrypto; npm link tsuju-pouchdb; grunt install"
   },
   "repository": {
     "type": "git",
@@ -33,9 +33,9 @@
     "grunt-browserify": "x"
   },
   "dependencies": {
-    "jsonCrypto": "git://github.com/jamesjwood/jsonCrypto.git",
-    "pouchdb": "git://github.com/jamesjwood/pouchdb.git",
-    "utils": "git://github.com/jamesjwood/utils.git",
+    "tsuju-jsoncrypto": "x",
+    "tsuju-utils": "x",
+    "tsuju-pouchdb": "x",
     "async": "0.2.x",
     "browserify": "2.34.x"
   },
