@@ -5,7 +5,7 @@
 /*global after */
 
 var assert = require('assert');
-var utils = require('utils');
+var utils = require('tsuju-utils');
 var events = require('events');
 var async = require('async');
 
@@ -17,7 +17,7 @@ var processorQueue = require('../src/processorQueue.js');
 
 utils.log.emitterToLog(pouchManager, masterLog.wrap('the manager'));
 
-var pouch = require('pouchdb');
+var pouch = require('tsuju-pouchdb');
 
 var serverURL = 'http://admin:password@localhost:5985';
 

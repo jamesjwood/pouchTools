@@ -9,7 +9,7 @@ module.exports = function(config) {
         basePath : '',
         files: [
         './karma/testacularUnitSetup.js',
-        './node_modules/jsonCrypto/lib/forge.min.js',
+        './node_modules/tsuju-jsoncrypto/lib/forge.min.js',
         './stage/test.js'
         ],
         port: 9877

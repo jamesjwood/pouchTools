@@ -15,7 +15,7 @@
 
 
 var assert = require('assert');
-var utils = require('utils');
+var utils = require('tsuju-utils');
 var events = require('events');
 
 var masterLog = utils.log().wrap('replicator');
@@ -30,7 +30,7 @@ var localDbUrl;
 
 var dbName = 'system';
 
-var pouch = require('pouchdb');
+var pouch = require('tsuju-pouchdb');
 
 describe('pouchManager.replicator', function() {
     'use strict';

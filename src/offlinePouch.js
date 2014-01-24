@@ -1,13 +1,13 @@
-var utils = require('utils');
+var utils = require('tsuju-utils');
 var async = require('async');
 var events = require('events');
 var replicator = require('./replicator.js');
 var assert = require('assert');
 var url = require('url');
 
-var pouch = require('pouchdb');
+var pouch = require('tsuju-pouchdb');
 
-var jsonCrypto = require('jsonCrypto');
+var jsonCrypto = require('tsuju-jsoncrypto');
 var retryHTTP = require('./retryHTTP.js');
 
 

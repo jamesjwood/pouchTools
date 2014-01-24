@@ -1,7 +1,7 @@
 //Function that retries on failed HTTP requests
 
 var assert = require('assert');
-var utils = require('utils');
+var utils = require('tsuju-utils');
 
 var errorCodes = [0, 400, 401, 402, 408, 407, 500, 501, 503, 504, 505];
 

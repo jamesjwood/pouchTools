@@ -1,8 +1,7 @@
 
 
-var utils = require('utils');
+var utils = require('tsuju-utils');
 var pkg = require('./package.json');
-var getWatchers = require('getWatchers');
 
 module.exports = function(grunt) {
   "use strict";
@@ -28,15 +27,7 @@ module.exports = function(grunt) {
           }
       }
     },
-   watch: {
-      dependencies: {
-        options: {
-          debounceDelay: 5000,
-          interrupt: true
-        },
-        files: getWatchers(pkg),
-        tasks: ['test']
-      },  
+   watch: { 
       local: {
         options: {
           debounceDelay: 5000,
@@ -121,6 +112,12 @@ module.exports = function(grunt) {
         options:{
           failOnError: true
         }
+      },
+      publish:{
+        command: 'npm publish;',
+        stdout: true,
+        stderr: true,
+        failOnError: true
       }
 
     },
@@ -191,5 +188,6 @@ grunt.registerTask('build', ['shell:makeBin', 'shell:browserifyValidator', 'shel
 grunt.registerTask('test', ['build', 'jshint', 'jsbeautifier:test','simplemocha', 'browserify:test', 'karma:local']);
 grunt.registerTask('development', ['build']);
 grunt.registerTask('production', ['build']);
+  grunt.registerTask('publish', ['bumpup:patch', 'shell:publish']);
 
 };

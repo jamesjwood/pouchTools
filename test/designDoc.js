@@ -5,7 +5,7 @@
 /*global after */
 
 var assert = require('assert');
-var utils = require('utils');
+var utils = require('tsuju-utils');
 var events = require('events');
 var sinon = require('sinon');
 
@@ -14,8 +14,8 @@ var sinon = require('sinon');
 var async = require('async');
 var lib = require('../src/designDoc.js');
 var validateDoc = require('../src/validateDoc.js');
-var pouch = require('pouchdb');
-var jsonCrypto = require('jsonCrypto');
+var pouch = require('tsuju-pouchdb');
+var jsonCrypto = require('tsuju-jsoncrypto');
 
 
 var masterLog = utils.log().wrap('designDoc');

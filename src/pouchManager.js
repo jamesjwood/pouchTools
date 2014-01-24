@@ -1,5 +1,5 @@
 /*global Pouch */
-var utils = require('utils');
+var utils = require('tsuju-utils');
 var url = require('url');
 var events = require('events');
 var async = require('async');
@@ -21,7 +21,7 @@ var processorQueue = require('./processorQueue.js');
 that.databases = {};
 that.services = {};
 that.views = {};
-var pouch = require('pouchdb');
+var pouch = require('tsuju-pouchdb');
 
 
 

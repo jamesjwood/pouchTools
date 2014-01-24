@@ -15,7 +15,7 @@
 
 
 var assert = require('assert');
-var utils = require('utils');
+var utils = require('tsuju-utils');
 var events = require('events');
 
 var masterLog = utils.log().wrap('processor');

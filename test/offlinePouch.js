@@ -6,11 +6,11 @@
 
 
 var assert = require('assert');
-var utils = require('utils');
+var utils = require('tsuju-utils');
 var events = require('events');
 var sinon = require('sinon');
 var rootDir;
-var pouch = require('pouchdb');
+var pouch = require('tsuju-pouchdb');
 if (typeof window != 'undefined') {
     rootDir = '';
 
@@ -27,7 +27,7 @@ var lib = require('../src/offlinePouch.js');
 var serverURL = 'http://admin:password@localhost:5985';
 var noServerURL = 'http://noserver/nodb';
 
-var jsonCrypto = require('jsonCrypto');
+var jsonCrypto = require('tsuju-jsoncrypto');
 
 
 var EXPONENT = 65537;

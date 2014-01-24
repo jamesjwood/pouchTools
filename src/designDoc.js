@@ -4,7 +4,7 @@
 /*global CONTRIBUTORS_ARRAY */
 /*global REQUIRED_FIELDS */
 /*global ALLOWED_TYPES */
-var utils = require('utils');
+var utils = require('tsuju-utils');
 var async = require('async');
 var events = require('events');
 var assert = require('assert');

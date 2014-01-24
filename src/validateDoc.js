@@ -1,5 +1,5 @@
-var jsonCrypto = require('jsonCrypto');
-var utils = require('utils');
+var jsonCrypto = require('tsuju-jsoncrypto');
+var utils = require('tsuju-utils');
 
 module.exports = function(newDoc, oldDoc, userCtx, typeSpecs) {
     var log = utils.log();

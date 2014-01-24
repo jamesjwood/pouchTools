@@ -1,6 +1,6 @@
 var events = require('events');
-var utils = require('utils');
-var jsonCrypto = require('jsonCrypto');
+var utils = require('tsuju-utils');
+var jsonCrypto = require('tsuju-jsoncrypto');
 var async = require('async');
 var assert = require('assert');
 

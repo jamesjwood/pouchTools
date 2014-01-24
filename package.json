@@ -1,6 +1,6 @@
 {
   "name": "tsuju-pouchtools",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "tools for replicating and securing pouch/couch db",
   "main": "index.js",
   "scripts": {
@@ -15,8 +15,11 @@
   "author": "James Wood <james.wood@datatransparency.com>",
   "license": "BSD",
   "devDependencies": {
+    "browserify": "2.35.x",
     "sinon": "1.7.x",
-    "nano": "4.3.x",
+    "nano": "4.2.x",
+    "brfs": "0.0.x",
+    "matchdep": "0.3.x",
     "karma-safari-launcher": "0.1.x",
     "karma-mocha": "0.1.x",
     "grunt": "0.4.x",
@@ -26,18 +29,16 @@
     "grunt-contrib-watch": "0.5.x",
     "grunt-karma": "0.6.x",
     "grunt-bumpx": "0.1.x",
-    "brfs": "0.0.x",
-    "matchdep": "0.3.x",
     "grunt-bumpup": "0.5.x",
     "grunt-jsbeautifier": "0.2.x",
-    "grunt-browserify": "x"
+    "grunt-browserify": "1.3.x"
   },
   "dependencies": {
+    "async": "0.2.x",
+    "browserify": "2.35.x",
     "tsuju-jsoncrypto": "x",
     "tsuju-utils": "x",
-    "tsuju-pouchdb": "x",
-    "async": "0.2.x",
-    "browserify": "2.34.x"
+    "tsuju-pouchdb": "x"
   },
   "browser": {
     "REQUIRE_PATH": false

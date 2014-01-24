@@ -1,5 +1,5 @@
 var events = require('events');
-var utils = require('utils');
+var utils = require('tsuju-utils');
 var async = require('async');
 var assert = require('assert');
 

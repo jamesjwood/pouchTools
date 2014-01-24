@@ -7,7 +7,7 @@ module.exports.processorQueue = require('./src/processorQueue.js');
 module.exports.processorQueueStack = require('./src/processorQueueStack.js');
 module.exports.pouchManager= require('./src/pouchManager.js');
 module.exports.retryHTTP= require('./src/retryHTTP.js');
-module.exports.pouch = require('pouchdb');
+module.exports.pouch = require('tsuju-pouchdb');
 
 if(typeof window ==='undefined')
 {

@@ -1,6 +1,6 @@
 var async = require('async');
 var assert = require('assert');
-var utils = require('utils');
+var utils = require('tsuju-utils');
 
 var masterLog = utils.log().wrap('pouchService');
 
@@ -9,13 +9,13 @@ var processorQueue = require('./../src/processorQueue.js');
 
 var lib = require('./../src/pouchService.js');
 
-var jsonCrypto = require('jsonCrypto');
+var jsonCrypto = require('tsuju-jsoncrypto');
 
 
 var localDbUrl;
 var EXPONENT = 65537;
 var MODULUS = 512;
-var pouch = require('pouchdb');
+var pouch = require('tsuju-pouchdb');
 
 if (typeof window != 'undefined') {
     localDbUrl = '';
